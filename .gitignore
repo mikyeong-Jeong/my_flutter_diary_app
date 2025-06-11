@@ -1,0 +1,17 @@
+# Flutter/Dart 관련 무시할 파일들
+.dart_tool/
+.packages
+build/
+.pub/
+.flutter-plugins
+.flutter-plugins-dependencies
+.melos_tool/
+.idea/
+android/.gradle/
+*.iml
+*.log
+*.lock
+*.tmp
+*.swp
+*.bak
+*.DS_Store
