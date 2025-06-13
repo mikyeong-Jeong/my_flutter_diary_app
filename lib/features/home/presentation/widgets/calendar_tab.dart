@@ -292,7 +292,7 @@ class _CalendarTabState extends State<CalendarTab> {
     final formattedDate = DateFormat('yyyy년 M월 d일 (E)', 'ko_KR').format(_selectedDay!);
 
     if (entry == null) {
-      return SingleChildScrollView(
+      return Padding(
         padding: const EdgeInsets.all(24.0),
         child: Center(
           child: Column(
@@ -477,6 +477,7 @@ class _CalendarTabState extends State<CalendarTab> {
               const SizedBox(height: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   if (entry.tags.isNotEmpty) ...[
                     Wrap(

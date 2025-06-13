@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/providers/diary_provider.dart';
-import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/models/diary_entry.dart';
 import '../../../write/presentation/screens/write_screen.dart';
 
@@ -79,78 +78,74 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildTagFilter() {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '태그 필터',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  if (_selectedTags.isNotEmpty)
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedTags.clear();
-                        });
-                        _performSearch();
-                      },
-                      child: const Text('전체 해제'),
-                    ),
-                ],
+              Text(
+                '태그 필터',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-              const SizedBox(height: 8),
-              
-              // 모든 사용된 태그들 표시
-              Consumer<DiaryProvider>(
-                builder: (context, diaryProvider, child) {
-                  final allUsedTags = diaryProvider.tagFrequency.keys.toList();
-                  allUsedTags.sort();
-                  
-                  if (allUsedTags.isEmpty) {
-                    return Text(
-                      '사용된 태그가 없습니다',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).disabledColor,
-                      ),
-                    );
-                  }
-                  
-                  return Wrap(
-                    spacing: 8.0,
-                    runSpacing: 4.0,
-                    children: allUsedTags.map((tag) {
-                      final isSelected = _selectedTags.contains(tag);
-                      final count = diaryProvider.tagFrequency[tag] ?? 0;
-                      
-                      return FilterChip(
-                        label: Text('$tag ($count)'),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              _selectedTags.add(tag);
-                            } else {
-                              _selectedTags.remove(tag);
-                            }
-                          });
-                          _performSearch();
-                        },
-                      );
-                    }).toList(),
-                  );
-                },
-              ),
+              if (_selectedTags.isNotEmpty)
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedTags.clear();
+                    });
+                    _performSearch();
+                  },
+                  child: const Text('전체 해제'),
+                ),
             ],
           ),
-        );
-      },
+          const SizedBox(height: 8),
+          
+          // 모든 사용된 태그들 표시
+          Consumer<DiaryProvider>(
+            builder: (context, diaryProvider, child) {
+              final allUsedTags = diaryProvider.tagFrequency.keys.toList();
+              allUsedTags.sort();
+              
+              if (allUsedTags.isEmpty) {
+                return Text(
+                  '사용된 태그가 없습니다',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).disabledColor,
+                  ),
+                );
+              }
+              
+              return Wrap(
+                spacing: 8.0,
+                runSpacing: 4.0,
+                children: allUsedTags.map((tag) {
+                  final isSelected = _selectedTags.contains(tag);
+                  final count = diaryProvider.tagFrequency[tag] ?? 0;
+                  
+                  return FilterChip(
+                    label: Text('$tag ($count)'),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedTags.add(tag);
+                        } else {
+                          _selectedTags.remove(tag);
+                        }
+                      });
+                      _performSearch();
+                    },
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 

@@ -344,7 +344,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       
       if (kIsWeb) {
         // 웹에서는 다운로드 링크 제공
-        final fileName = 'diary_backup_${DateTime.now().millisecondsSinceEpoch}.json';
         
         // 사용자에게 백업 데이터를 보여주는 다이얼로그
         if (mounted) {

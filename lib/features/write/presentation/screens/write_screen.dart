@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/providers/diary_provider.dart';
-import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/models/diary_entry.dart';
 
 class WriteScreen extends StatefulWidget {
@@ -185,176 +184,179 @@ class _WriteScreenState extends State<WriteScreen> {
   }
 
   Widget _buildIconSelector() {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '감정 표현',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '최대 5개까지 선택 가능',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).disabledColor,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  children: [
-                    // 선택된 아이콘들 (크게 표시)
-                    if (_selectedIcons.isNotEmpty) ...[
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              '선택된 감정',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Wrap(
-                              spacing: 12.0,
-                              runSpacing: 12.0,
-                              children: _selectedIcons.map((icon) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedIcons.remove(icon);
-                                    });
-                                  },
-                                  child: Container(
-                                    width: 60,
-                                    height: 60,
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).primaryColor,
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        icon,
-                                        style: const TextStyle(fontSize: 28),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                    
-                    // 아이콘 선택 그리드
-                    Text(
-                      '감정 선택',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+    final defaultIcons = [
+      '😊', '😢', '😡', '😍', '🤔',
+      '💪', '📖', '🏃', '🍔', '☕',
+      '🌞', '🌙', '⭐', '❤️', '👍',
+      '💼', '🎵', '🎬', '🎮', '📱',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '감정 표현',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '최대 5개까지 선택 가능',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).disabledColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              children: [
+                // 선택된 아이콘들 (크게 표시)
+                if (_selectedIcons.isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: 12),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 6,
-                        childAspectRatio: 1,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                      ),
-                      itemCount: themeProvider.allIcons.length,
-                      itemBuilder: (context, index) {
-                        final icon = themeProvider.allIcons[index];
-                        final isSelected = _selectedIcons.contains(icon);
-                        
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              if (isSelected) {
-                                _selectedIcons.remove(icon);
-                              } else if (_selectedIcons.length < 5) {
-                                _selectedIcons.add(icon);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('최대 5개까지만 선택할 수 있습니다')),
-                                );
-                              }
-                            });
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: isSelected 
-                                  ? Theme.of(context).primaryColor.withValues(alpha: 0.2)
-                                  : Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isSelected 
-                                    ? Theme.of(context).primaryColor
-                                    : Theme.of(context).dividerColor,
-                                width: isSelected ? 2 : 1,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                icon,
-                                style: const TextStyle(fontSize: 24),
-                              ),
-                            ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '선택된 감정',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).primaryColor,
                           ),
-                        );
-                      },
-                    ),
-                    
-                    // 커스텀 아이콘 추가
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: _customIconController,
-                      decoration: InputDecoration(
-                        hintText: '이모지를 직접 입력하세요',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
                         ),
-                        prefixIcon: const Icon(Icons.add_reaction),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: _addCustomIcon,
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 12.0,
+                          runSpacing: 12.0,
+                          children: _selectedIcons.map((icon) {
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedIcons.remove(icon);
+                                });
+                              },
+                              child: Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    icon,
+                                    style: const TextStyle(fontSize: 28),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+                
+                // 아이콘 선택 그리드
+                Text(
+                  '감정 선택',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 6,
+                    childAspectRatio: 1,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                  ),
+                  itemCount: defaultIcons.length,
+                  itemBuilder: (context, index) {
+                    final icon = defaultIcons[index];
+                    final isSelected = _selectedIcons.contains(icon);
+                    
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          if (isSelected) {
+                            _selectedIcons.remove(icon);
+                          } else if (_selectedIcons.length < 5) {
+                            _selectedIcons.add(icon);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('최대 5개까지만 선택할 수 있습니다')),
+                            );
+                          }
+                        });
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isSelected 
+                              ? Theme.of(context).primaryColor.withValues(alpha: 0.2)
+                              : Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected 
+                                ? Theme.of(context).primaryColor
+                                : Theme.of(context).dividerColor,
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            icon,
+                            style: const TextStyle(fontSize: 24),
+                          ),
                         ),
                       ),
-                      onSubmitted: (_) => _addCustomIcon(),
-                    ),
-                  ],
+                    );
+                  },
                 ),
-              ),
+                
+                // 커스텀 아이콘 추가
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _customIconController,
+                  decoration: InputDecoration(
+                    hintText: '이모지를 직접 입력하세요',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(Icons.add_reaction),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.add),
+                      onPressed: _addCustomIcon,
+                    ),
+                  ),
+                  onSubmitted: (_) => _addCustomIcon(),
+                ),
+              ],
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
     );
   }
 
@@ -399,74 +401,77 @@ class _WriteScreenState extends State<WriteScreen> {
   }
 
   Widget _buildTagInput() {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '태그',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+    final defaultTags = [
+      '자기계발', '운동', '독서', '일기',
+      '감정', '회고', '계획', '목표',
+      '가족', '친구', '직장', '취미',
+      '건강', '여행', '음식', '공부',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '태그',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _tagController,
+          decoration: InputDecoration(
+            hintText: '태그를 입력하고 엔터를 누르세요',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _tagController,
-              decoration: InputDecoration(
-                hintText: '태그를 입력하고 엔터를 누르세요',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surface,
-                prefixIcon: const Icon(Icons.tag),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: _addTag,
-                ),
-              ),
-              onSubmitted: (_) => _addTag(),
+            filled: true,
+            fillColor: Theme.of(context).colorScheme.surface,
+            prefixIcon: const Icon(Icons.tag),
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: _addTag,
             ),
-            const SizedBox(height: 16),
-            
-            // 기본 태그들
-            Text(
-              '추천 태그',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).primaryColor,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8.0,
-              runSpacing: 8.0,
-              children: themeProvider.allTags.map((tag) {
-                final isSelected = _selectedTags.contains(tag);
-                return FilterChip(
-                  label: Text(tag),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      if (selected) {
-                        if (!_selectedTags.contains(tag)) {
-                          _selectedTags.add(tag);
-                        }
-                      } else {
-                        _selectedTags.remove(tag);
-                      }
-                    });
-                  },
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-                  checkmarkColor: Theme.of(context).primaryColor,
-                );
-              }).toList(),
-            ),
-          ],
-        );
-      },
+          ),
+          onSubmitted: (_) => _addTag(),
+        ),
+        const SizedBox(height: 16),
+        
+        // 기본 태그들
+        Text(
+          '추천 태그',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: Theme.of(context).primaryColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          children: defaultTags.map((tag) {
+            final isSelected = _selectedTags.contains(tag);
+            return FilterChip(
+              label: Text(tag),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    if (!_selectedTags.contains(tag)) {
+                      _selectedTags.add(tag);
+                    }
+                  } else {
+                    _selectedTags.remove(tag);
+                  }
+                });
+              },
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+              checkmarkColor: Theme.of(context).primaryColor,
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 
