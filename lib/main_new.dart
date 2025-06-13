@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/date_symbol_data_local.dart';
 import 'core/providers/diary_provider.dart';
 import 'core/providers/settings_provider.dart';
 import 'features/home/presentation/screens/home_screen.dart';
@@ -9,17 +8,12 @@ import 'features/search/presentation/screens/search_screen.dart';
 import 'features/settings/presentation/screens/settings_screen.dart';
 import 'core/theme/app_theme.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Locale 데이터 초기화
-  await initializeDateFormatting('ko_KR', null);
-  
+void main() {
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => DiaryProvider()),
-        ChangeNotifierProvider(create: (context) => SettingsProvider()),
+        ChangeNotifierProvider(create: (context) => SettingsProvider()..loadSettings()),
       ],
       child: const MyApp(),
     ),
@@ -28,38 +22,6 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // SettingsProvider의 loadSettings를 initState에서 호출하도록 변경
-    return MaterialApp(
-      title: '나의 다이어리',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // 일단 시스템 테마로 설정
-      home: const AppWrapper(),
-    );
-  }
-}
-
-// Settings 로딩을 위한 Wrapper 위젯
-class AppWrapper extends StatefulWidget {
-  const AppWrapper({super.key});
-
-  @override
-  State<AppWrapper> createState() => _AppWrapperState();
-}
-
-class _AppWrapperState extends State<AppWrapper> {
-  @override
-  void initState() {
-    super.initState();
-    // 앱 시작 후 settings 로드
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SettingsProvider>().loadSettings();
-    });
-  }
 
   @override
   Widget build(BuildContext context) {

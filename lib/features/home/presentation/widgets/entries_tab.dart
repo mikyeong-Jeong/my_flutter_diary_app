@@ -62,7 +62,8 @@ class EntriesTab extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => WriteScreen(entry: entry),
+                      builder: (context) => const WriteScreen(),
+                      settings: RouteSettings(arguments: entry),
                     ),
                   );
                 },

@@ -3,7 +3,7 @@ import '../models/app_settings.dart';
 import '../services/storage_service.dart';
 
 class SettingsProvider with ChangeNotifier {
-  final StorageService _storageService = StorageService();
+  final StorageService _storageService = StorageService.instance;
   
   AppSettings _settings = AppSettings();
   bool _isLoading = false;
@@ -98,18 +98,16 @@ class SettingsProvider with ChangeNotifier {
   // Export backup
   Future<String> exportBackup() async {
     try {
-      final backupFile = await _storageService.exportBackup();
-      return backupFile.path;
+      return await _storageService.exportBackup();
     } catch (e) {
       throw Exception('백업 내보내기 실패: $e');
     }
   }
 
   // Import backup
-  Future<void> importBackup(String filePath) async {
+  Future<void> importBackup(String backupData) async {
     try {
-      await _storageService.importBackup(await _storageService._appDirectory.then((dir) => 
-          dir.listSync().firstWhere((file) => file.path == filePath)));
+      await _storageService.importBackup(backupData);
       await loadSettings();
     } catch (e) {
       throw Exception('백업 가져오기 실패: $e');

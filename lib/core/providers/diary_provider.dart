@@ -8,24 +8,31 @@ class DiaryProvider extends ChangeNotifier {
   DateTime _selectedDate = DateTime.now();
   String _searchQuery = '';
   List<String> _selectedTags = [];
+  bool _isLoading = false;
 
   List<DiaryEntry> get entries => _entries;
   List<DiaryEntry> get filteredEntries => _filteredEntries;
   DateTime get selectedDate => _selectedDate;
   String get searchQuery => _searchQuery;
   List<String> get selectedTags => _selectedTags;
+  bool get isLoading => _isLoading;
 
   DiaryProvider() {
-    _loadEntries();
+    loadEntries();
   }
 
-  Future<void> _loadEntries() async {
+  Future<void> loadEntries() async {
+    _isLoading = true;
+    notifyListeners();
+    
     try {
       _entries = await StorageService.instance.loadAllEntries();
       _applyFilters();
-      notifyListeners();
     } catch (e) {
       debugPrint('Failed to load entries: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -36,7 +43,11 @@ class DiaryProvider extends ChangeNotifier {
 
   DiaryEntry? getEntryForDate(DateTime date) {
     final dateString = _formatDate(date);
-    return _entries.where((entry) => entry.date == dateString).firstOrNull;
+    try {
+      return _entries.where((entry) => entry.date == dateString).first;
+    } catch (e) {
+      return null;
+    }
   }
 
   List<DiaryEntry> getEntriesForMonth(DateTime month) {
@@ -169,7 +180,7 @@ class DiaryProvider extends ChangeNotifier {
   Future<void> importBackup(String backupData) async {
     try {
       await StorageService.instance.importBackup(backupData);
-      await _loadEntries();
+      await loadEntries();
     } catch (e) {
       debugPrint('Failed to import backup: $e');
       rethrow;
