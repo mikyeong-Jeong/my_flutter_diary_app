@@ -48,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             Tab(
               icon: Icon(Icons.list),
-              text: '엔트리',
+              text: '메모 리스트',
             ),
           ],
         ),
