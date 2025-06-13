@@ -335,13 +335,13 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: isSelectedTag
-                            ? Theme.of(context).primaryColor.withOpacity(0.2)
-                            : Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                            ? Theme.of(context).primaryColor.withValues(alpha: 0.2)
+                            : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12.0),
                         border: Border.all(
                           color: isSelectedTag
                               ? Theme.of(context).primaryColor
-                              : Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                              : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                           width: 1,
                         ),
                       ),
@@ -397,7 +397,7 @@ class _SearchScreenState extends State<SearchScreen> {
       spans.add(TextSpan(
         text: text.substring(index, index + query.length),
         style: baseStyle.copyWith(
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.3),
+          backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.3),
           fontWeight: FontWeight.bold,
         ),
       ));

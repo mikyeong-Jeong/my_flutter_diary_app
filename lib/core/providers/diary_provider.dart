@@ -136,6 +136,26 @@ class DiaryProvider extends ChangeNotifier {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
+  // 백업 및 복원
+  Future<String> exportBackup() async {
+    try {
+      return await StorageService.instance.exportBackup();
+    } catch (e) {
+      debugPrint('Failed to export backup: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> importBackup(String backupData) async {
+    try {
+      await StorageService.instance.importBackup(backupData);
+      await loadEntries();
+    } catch (e) {
+      debugPrint('Failed to import backup: $e');
+      rethrow;
+    }
+  }
+
   // 통계 정보
   int get totalEntries => _entries.length;
   
@@ -165,25 +185,5 @@ class DiaryProvider extends ChangeNotifier {
       }
     }
     return frequency;
-  }
-
-  // 백업 및 복원
-  Future<String> exportBackup() async {
-    try {
-      return await StorageService.instance.exportBackup();
-    } catch (e) {
-      debugPrint('Failed to export backup: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> importBackup(String backupData) async {
-    try {
-      await StorageService.instance.importBackup(backupData);
-      await loadEntries();
-    } catch (e) {
-      debugPrint('Failed to import backup: $e');
-      rethrow;
-    }
   }
 }

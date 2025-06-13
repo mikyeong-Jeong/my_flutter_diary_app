@@ -212,10 +212,10 @@ class _CalendarTabState extends State<CalendarTab> {
       backgroundColor = Theme.of(context).primaryColor;
       textColor = Colors.white;
     } else if (isToday) {
-      backgroundColor = Theme.of(context).primaryColor.withOpacity(0.2);
+      backgroundColor = Theme.of(context).primaryColor.withValues(alpha: 0.2);
       textColor = Theme.of(context).primaryColor;
     } else if (entry != null) {
-      backgroundColor = Theme.of(context).primaryColor.withOpacity(0.05);
+      backgroundColor = Theme.of(context).primaryColor.withValues(alpha: 0.05);
     }
 
     if (isOutside) {
@@ -236,7 +236,7 @@ class _CalendarTabState extends State<CalendarTab> {
               )
             : entry != null && !isSelected && !isToday
                 ? Border.all(
-                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                     width: 1.0,
                   )
                 : null,
@@ -292,16 +292,17 @@ class _CalendarTabState extends State<CalendarTab> {
     final formattedDate = DateFormat('yyyy년 M월 d일 (E)', 'ko_KR').format(_selectedDay!);
 
     if (entry == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -316,6 +317,7 @@ class _CalendarTabState extends State<CalendarTab> {
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               Text(
@@ -323,6 +325,7 @@ class _CalendarTabState extends State<CalendarTab> {
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Theme.of(context).disabledColor,
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
@@ -393,7 +396,7 @@ class _CalendarTabState extends State<CalendarTab> {
                         tooltip: '삭제',
                         style: IconButton.styleFrom(
                           foregroundColor: Colors.red,
-                          side: BorderSide(color: Colors.red.withOpacity(0.3)),
+                          side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
                         ),
                       ),
                     ],
@@ -406,7 +409,7 @@ class _CalendarTabState extends State<CalendarTab> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Wrap(
@@ -420,7 +423,7 @@ class _CalendarTabState extends State<CalendarTab> {
                           borderRadius: BorderRadius.circular(8.0),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -486,10 +489,10 @@ class _CalendarTabState extends State<CalendarTab> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor.withOpacity(0.1),
+                            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: Theme.of(context).primaryColor.withOpacity(0.3),
+                              color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Text(

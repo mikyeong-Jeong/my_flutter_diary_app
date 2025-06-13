@@ -112,4 +112,36 @@ class ThemeProvider extends ChangeNotifier {
 
   // 모든 태그 (기본 + 커스텀)
   List<String> get allTags => [...defaultTags, ...customTags];
+
+  // Get default emotion icons
+  static List<String> get defaultEmotionIcons => [
+    '😊', '😢', '😡', '😴', '🤔', 
+    '💪', '❤️', '🎉', '📚', '🏃‍♂️',
+    '🍕', '☕', '🎵', '🌟', '🔥'
+  ];
+
+  // Get all available icons (default + custom) - 별칭
+  List<String> get allAvailableIcons => allIcons;
+
+  // Get all available tags (default + custom) - 별칭
+  List<String> get allAvailableTags => allTags;
+
+  // Export backup
+  Future<String> exportBackup() async {
+    try {
+      return await StorageService.instance.exportBackup();
+    } catch (e) {
+      throw Exception('백업 내보내기 실패: $e');
+    }
+  }
+
+  // Import backup
+  Future<void> importBackup(String backupData) async {
+    try {
+      await StorageService.instance.importBackup(backupData);
+      await _loadSettings();
+    } catch (e) {
+      throw Exception('백업 가져오기 실패: $e');
+    }
+  }
 }

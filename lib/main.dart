@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/providers/diary_provider.dart';
-import 'core/providers/settings_provider.dart';
+import 'core/providers/theme_provider.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 import 'features/write/presentation/screens/write_screen.dart';
 import 'features/search/presentation/screens/search_screen.dart';
@@ -15,15 +15,7 @@ void main() async {
   // Locale 데이터 초기화
   await initializeDateFormatting('ko_KR', null);
   
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => DiaryProvider()),
-        ChangeNotifierProvider(create: (context) => SettingsProvider()),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -31,46 +23,30 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // SettingsProvider의 loadSettings를 initState에서 호출하도록 변경
-    return MaterialApp(
-      title: '나의 다이어리',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // 일단 시스템 테마로 설정
-      home: const AppWrapper(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => DiaryProvider()),
+      ],
+      child: const AppWrapper(),
     );
   }
 }
 
 // Settings 로딩을 위한 Wrapper 위젯
-class AppWrapper extends StatefulWidget {
+class AppWrapper extends StatelessWidget {
   const AppWrapper({super.key});
 
   @override
-  State<AppWrapper> createState() => _AppWrapperState();
-}
-
-class _AppWrapperState extends State<AppWrapper> {
-  @override
-  void initState() {
-    super.initState();
-    // 앱 시작 후 settings 로드
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SettingsProvider>().loadSettings();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
         return MaterialApp(
           title: '나의 다이어리',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
-          themeMode: settingsProvider.themeMode,
+          themeMode: themeProvider.themeMode,
           initialRoute: '/',
           routes: {
             '/': (context) => const HomeScreen(),

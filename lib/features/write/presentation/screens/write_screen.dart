@@ -24,7 +24,6 @@ class _WriteScreenState extends State<WriteScreen> {
   
   bool _isEditing = false;
   bool _isSaving = false;
-  DiaryEntry? _originalEntry;
 
   @override
   void didChangeDependencies() {
@@ -36,7 +35,6 @@ class _WriteScreenState extends State<WriteScreen> {
       // 기존 엔트리 수정
       if (!_isEditing) {
         _isEditing = true;
-        _originalEntry = args;
         _loadExistingEntry(args);
       }
     } else if (args is DateTime) {
@@ -444,7 +442,7 @@ class _WriteScreenState extends State<WriteScreen> {
             Wrap(
               spacing: 8.0,
               runSpacing: 8.0,
-              children: themeProvider.defaultTags.map((tag) {
+              children: themeProvider.allTags.map((tag) {
                 final isSelected = _selectedTags.contains(tag);
                 return FilterChip(
                   label: Text(tag),
