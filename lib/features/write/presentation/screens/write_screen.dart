@@ -86,35 +86,38 @@ class _WriteScreenState extends State<WriteScreen> {
             ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 날짜 선택
-            _buildDateSelector(),
-            const SizedBox(height: 24),
-            
-            // 제목 입력
-            _buildTitleInput(),
-            const SizedBox(height: 24),
-            
-            // 감정 아이콘 선택
-            _buildIconSelector(),
-            const SizedBox(height: 24),
-            
-            // 내용 입력
-            _buildContentInput(),
-            const SizedBox(height: 24),
-            
-            // 태그 입력
-            _buildTagInput(),
-            const SizedBox(height: 24),
-            
-            // 선택된 태그 표시
-            _buildSelectedTags(),
-            const SizedBox(height: 100), // 하단 여백
-          ],
+      body: Scrollbar(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 날짜 선택
+              _buildDateSelector(),
+              const SizedBox(height: 24),
+              
+              // 제목 입력
+              _buildTitleInput(),
+              const SizedBox(height: 24),
+              
+              // 감정 아이콘 선택
+              _buildIconSelector(),
+              const SizedBox(height: 24),
+              
+              // 내용 입력
+              _buildContentInput(),
+              const SizedBox(height: 24),
+              
+              // 태그 입력
+              _buildTagInput(),
+              const SizedBox(height: 24),
+              
+              // 선택된 태그 표시
+              _buildSelectedTags(),
+              const SizedBox(height: 100), // 하단 여백
+            ],
+          ),
         ),
       ),
     );

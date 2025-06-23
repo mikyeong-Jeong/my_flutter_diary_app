@@ -29,28 +29,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: const Text('설정'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          // 테마 설정
-          _buildThemeSettings(),
-          const SizedBox(height: 20),
-          
-          // 보안 설정
-          _buildSecuritySettings(),
-          const SizedBox(height: 20),
-          
-          // 백업 및 복원
-          _buildBackupSettings(),
-          const SizedBox(height: 20),
-          
-          // 사용자 정의 설정
-          _buildCustomSettings(),
-          const SizedBox(height: 20),
-          
-          // 앱 정보
-          _buildAppInfo(),
-        ],
+      body: Scrollbar(
+        child: ListView(
+          padding: const EdgeInsets.all(16.0),
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            // 테마 설정
+            _buildThemeSettings(),
+            const SizedBox(height: 20),
+            
+            // 보안 설정
+            _buildSecuritySettings(),
+            const SizedBox(height: 20),
+            
+            // 백업 및 복원
+            _buildBackupSettings(),
+            const SizedBox(height: 20),
+            
+            // 사용자 정의 설정
+            _buildCustomSettings(),
+            const SizedBox(height: 20),
+            
+            // 앱 정보
+            _buildAppInfo(),
+            
+            // 스크롤 테스트용 추가 공간
+            const SizedBox(height: 50),
+          ],
+        ),
       ),
     );
   }
@@ -353,7 +359,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: const Text('백업 데이터'),
               content: SizedBox(
                 width: double.maxFinite,
-                height: 300,
+                height: MediaQuery.of(context).size.height * 0.5,
                 child: SingleChildScrollView(
                   child: SelectableText(
                     backupData,
@@ -415,7 +421,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('백업 데이터 입력'),
             content: SizedBox(
               width: double.maxFinite,
-              height: 300,
+              height: MediaQuery.of(context).size.height * 0.5,
               child: TextField(
                 controller: controller,
                 maxLines: null,
@@ -487,7 +493,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('커스텀 아이콘 관리'),
         content: SizedBox(
           width: double.maxFinite,
-          height: 300,
+          height: MediaQuery.of(context).size.height * 0.5,
           child: Column(
             children: [
               // 아이콘 추가
@@ -574,7 +580,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('커스텀 태그 관리'),
         content: SizedBox(
           width: double.maxFinite,
-          height: 300,
+          height: MediaQuery.of(context).size.height * 0.5,
           child: Column(
             children: [
               // 태그 추가
