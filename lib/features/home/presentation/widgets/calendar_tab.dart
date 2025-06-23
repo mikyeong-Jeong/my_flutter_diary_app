@@ -83,6 +83,22 @@ class _CalendarTabState extends State<CalendarTab> {
                       return _buildDayCell(context, day, entry, false, false, isOutside: true);
                     },
                     markerBuilder: (context, day, events) => null,
+                    dowBuilder: (context, day) {
+                      final text = DateFormat.E('ko_KR').format(day);
+                      return Center(
+                        child: Text(
+                          text,
+                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            color: day.weekday == DateTime.sunday
+                                ? Colors.red
+                                : day.weekday == DateTime.saturday
+                                    ? Theme.of(context).primaryColor
+                                    : Theme.of(context).textTheme.bodyMedium?.color,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   headerStyle: HeaderStyle(
                     formatButtonVisible: true,
@@ -121,15 +137,6 @@ class _CalendarTabState extends State<CalendarTab> {
                     cellMargin: const EdgeInsets.all(4.0),
                     cellPadding: const EdgeInsets.all(0),
                     rowDecoration: const BoxDecoration(),
-                  ),
-                  daysOfWeekStyle: DaysOfWeekStyle(
-                    weekdayStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    weekendStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                      color: Theme.of(context).primaryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
                   ),
                 ),
               ),
@@ -248,9 +255,11 @@ class _CalendarTabState extends State<CalendarTab> {
             '${day.day}',
             style: TextStyle(
               color: textColor ?? 
-                  (day.weekday == DateTime.saturday || day.weekday == DateTime.sunday
-                      ? Theme.of(context).primaryColor
-                      : Theme.of(context).textTheme.bodyMedium?.color),
+                  (day.weekday == DateTime.sunday
+                      ? Colors.red
+                      : day.weekday == DateTime.saturday
+                          ? Theme.of(context).primaryColor
+                          : Theme.of(context).textTheme.bodyMedium?.color),
               fontWeight: isSelected || isToday ? FontWeight.bold : FontWeight.w500,
               fontSize: 14,
             ),

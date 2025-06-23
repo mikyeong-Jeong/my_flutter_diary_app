@@ -94,9 +94,7 @@ class ThemeProvider extends ChangeNotifier {
   // 기본 아이콘들
   List<String> get defaultIcons => [
     '😊', '😢', '😡', '😍', '🤔',
-    '💪', '📖', '🏃', '🍔', '☕',
     '🌞', '🌙', '⭐', '❤️', '👍',
-    '💼', '🎵', '🎬', '🎮', '📱',
   ];
 
   // 기본 태그들
