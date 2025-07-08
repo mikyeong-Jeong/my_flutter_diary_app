@@ -1,27 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import 'dart:convert';
+import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:file_selector/file_selector.dart';
+import 'dart:typed_data';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/diary_provider.dart';
+import '../../../../core/models/diary_entry.dart';
+import '../../../../core/utils/download_helper.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
-
-  @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  final _passwordController = TextEditingController();
-  bool _isExporting = false;
-  bool _isImporting = false;
-
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,626 +19,390 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: const Text('설정'),
       ),
-      body: Scrollbar(
-        child: ListView(
-          padding: const EdgeInsets.all(16.0),
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            // 테마 설정
-            _buildThemeSettings(),
-            const SizedBox(height: 20),
-            
-            // 보안 설정
-            _buildSecuritySettings(),
-            const SizedBox(height: 20),
-            
-            // 백업 및 복원
-            _buildBackupSettings(),
-            const SizedBox(height: 20),
-            
-            // 사용자 정의 설정
-            _buildCustomSettings(),
-            const SizedBox(height: 20),
-            
-            // 앱 정보
-            _buildAppInfo(),
-            
-            // 스크롤 테스트용 추가 공간
-            const SizedBox(height: 50),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThemeSettings() {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '테마 설정',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                
-                SwitchListTile(
-                  title: const Text('시스템 테마 사용'),
-                  subtitle: const Text('시스템 설정에 따라 자동으로 테마가 변경됩니다'),
-                  value: themeProvider.isSystemTheme,
-                  onChanged: (value) {
-                    themeProvider.setSystemTheme(value);
-                  },
-                ),
-                
-                if (!themeProvider.isSystemTheme)
-                  SwitchListTile(
-                    title: const Text('다크 모드'),
-                    subtitle: const Text('어두운 테마를 사용합니다'),
-                    value: themeProvider.isDarkMode,
-                    onChanged: (value) {
-                      themeProvider.toggleDarkMode();
-                    },
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSecuritySettings() {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '보안 설정',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                
-                SwitchListTile(
-                  title: const Text('앱 잠금'),
-                  subtitle: const Text('앱 실행 시 비밀번호를 요구합니다'),
-                  value: themeProvider.isLockEnabled,
-                  onChanged: (value) {
-                    if (value) {
-                      _showPasswordSetupDialog();
-                    } else {
-                      themeProvider.setLockEnabled(false);
-                      themeProvider.setLockPassword(null);
-                    }
-                  },
-                ),
-                
-                if (themeProvider.isLockEnabled)
-                  ListTile(
-                    title: const Text('비밀번호 변경'),
-                    subtitle: const Text('앱 잠금 비밀번호를 변경합니다'),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: _showPasswordSetupDialog,
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildBackupSettings() {
-    return Consumer<DiaryProvider>(
-      builder: (context, diaryProvider, child) {
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '백업 및 복원',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                
-                ListTile(
-                  leading: const Icon(Icons.upload),
-                  title: const Text('백업 내보내기'),
-                  subtitle: const Text('모든 일기와 설정을 파일로 저장합니다'),
-                  trailing: _isExporting 
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.arrow_forward_ios),
-                  onTap: _isExporting ? null : () => _exportBackup(diaryProvider),
-                ),
-                
-                const Divider(),
-                
-                ListTile(
-                  leading: const Icon(Icons.download),
-                  title: const Text('백업 가져오기'),
-                  subtitle: const Text('이전에 저장한 백업 파일을 불러옵니다'),
-                  trailing: _isImporting 
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.arrow_forward_ios),
-                  onTap: _isImporting ? null : () => _importBackup(diaryProvider),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildCustomSettings() {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '사용자 정의',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                
-                ListTile(
-                  leading: const Icon(Icons.emoji_emotions),
-                  title: const Text('감정 아이콘 관리'),
-                  subtitle: Text('${themeProvider.customIcons.length}개의 커스텀 아이콘'),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: () => _showCustomIconsDialog(themeProvider),
-                ),
-                
-                const Divider(),
-                
-                ListTile(
-                  leading: const Icon(Icons.label),
-                  title: const Text('태그 관리'),
-                  subtitle: Text('${themeProvider.customTags.length}개의 커스텀 태그'),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: () => _showCustomTagsDialog(themeProvider),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildAppInfo() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '앱 정보',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            
-            Consumer<DiaryProvider>(
-              builder: (context, diaryProvider, child) {
-                return Column(
-                  children: [
-                    _buildInfoRow('총 일기 수', '${diaryProvider.totalEntries}개'),
-                    _buildInfoRow('이번 달 일기', '${diaryProvider.thisMonthEntries}개'),
-                    _buildInfoRow('앱 버전', '1.0.0'),
-                    _buildInfoRow('개발자', 'Diary App Team'),
-                  ],
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: ListView(
         children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showPasswordSetupDialog() {
-    _passwordController.clear();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('비밀번호 설정'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('앱 잠금에 사용할 비밀번호를 입력하세요.'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: '비밀번호',
-                border: OutlineInputBorder(),
+          // 테마 설정
+          _buildSection(
+            title: '테마',
+            children: [
+              Consumer<ThemeProvider>(
+                builder: (context, themeProvider, child) {
+                  return ListTile(
+                    leading: const Icon(Icons.brightness_6),
+                    title: const Text('다크 모드'),
+                    subtitle: Text(
+                      themeProvider.themeMode == ThemeMode.dark
+                          ? '다크 모드 사용 중'
+                          : themeProvider.themeMode == ThemeMode.light
+                              ? '라이트 모드 사용 중'
+                              : '시스템 설정 따름',
+                    ),
+                    trailing: Switch(
+                      value: themeProvider.themeMode == ThemeMode.dark,
+                      onChanged: (value) {
+                        themeProvider.toggleTheme();
+                      },
+                    ),
+                  );
+                },
               ),
-              maxLength: 20,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              final password = _passwordController.text.trim();
-              if (password.length >= 4) {
-                context.read<ThemeProvider>().setLockPassword(password);
-                context.read<ThemeProvider>().setLockEnabled(true);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('비밀번호가 설정되었습니다')),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('비밀번호는 최소 4자리 이상이어야 합니다')),
-                );
-              }
-            },
-            child: const Text('설정'),
+          
+          // 데이터 관리
+          _buildSection(
+            title: '데이터 관리',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.backup),
+                title: const Text('백업'),
+                subtitle: const Text('일기 데이터를 백업 파일로 저장'),
+                onTap: () => _exportBackup(context),
+              ),
+              ListTile(
+                leading: const Icon(Icons.restore),
+                title: const Text('복원'),
+                subtitle: const Text('백업 파일에서 일기 데이터 복원'),
+                onTap: () => _importBackup(context),
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_forever),
+                title: const Text('모든 데이터 삭제'),
+                subtitle: const Text('모든 일기를 영구적으로 삭제'),
+                onTap: () => _deleteAllData(context),
+              ),
+            ],
+          ),
+          
+          // 통계
+          _buildSection(
+            title: '통계',
+            children: [
+              Consumer<DiaryProvider>(
+                builder: (context, diaryProvider, child) {
+                  final entries = diaryProvider.entries;
+                  final totalEntries = entries.length;
+                  final thisMonth = entries.where((e) {
+                    if (e.date == null) return false;
+                    final now = DateTime.now();
+                    final entryDate = DateTime.parse(e.date!);
+                    return entryDate.year == now.year && entryDate.month == now.month;
+                  }).length;
+                  final streak = _calculateStreak(entries);
+                  
+                  return Column(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.book),
+                        title: const Text('총 일기 수'),
+                        trailing: Text(
+                          '$totalEntries개',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.calendar_today),
+                        title: const Text('이번 달 일기'),
+                        trailing: Text(
+                          '$thisMonth개',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.local_fire_department),
+                        title: const Text('연속 작성일'),
+                        trailing: Text(
+                          '$streak일',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+          
+          // 앱 정보
+          _buildSection(
+            title: '앱 정보',
+            children: [
+              const ListTile(
+                leading: Icon(Icons.info),
+                title: Text('버전'),
+                trailing: Text('1.0.0'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.code),
+                title: const Text('오픈소스 라이선스'),
+                onTap: () {
+                  showLicensePage(
+                    context: context,
+                    applicationName: '나의 다이어리',
+                    applicationVersion: '1.0.0',
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
     );
   }
-
-  Future<void> _exportBackup(DiaryProvider diaryProvider) async {
-    setState(() {
-      _isExporting = true;
-    });
-
+  
+  Widget _buildSection({
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
+        ),
+        ...children,
+        const Divider(),
+      ],
+    );
+  }
+  
+  int _calculateStreak(List<DiaryEntry> entries) {
+    if (entries.isEmpty) return 0;
+    
+    final sortedEntries = entries
+        .where((e) => e.date != null)
+        .toList()
+      ..sort((a, b) => b.date!.compareTo(a.date!));
+    
+    if (sortedEntries.isEmpty) return 0;
+    
+    int streak = 0;
+    DateTime? lastDate;
+    
+    for (final entry in sortedEntries) {
+      final entryDateTime = DateTime.parse(entry.date!);
+      final entryDate = DateTime(entryDateTime.year, entryDateTime.month, entryDateTime.day);
+      
+      if (lastDate == null) {
+        // 첫 번째 엔트리
+        final today = DateTime.now();
+        final todayDate = DateTime(today.year, today.month, today.day);
+        
+        if (entryDate == todayDate || 
+            entryDate == todayDate.subtract(const Duration(days: 1))) {
+          streak = 1;
+          lastDate = entryDate;
+        } else {
+          break;
+        }
+      } else {
+        // 연속된 날짜인지 확인
+        if (lastDate.subtract(const Duration(days: 1)) == entryDate) {
+          streak++;
+          lastDate = entryDate;
+        } else {
+          break;
+        }
+      }
+    }
+    
+    return streak;
+  }
+  
+  Future<void> _exportBackup(BuildContext context) async {
     try {
+      final diaryProvider = context.read<DiaryProvider>();
       final backupData = await diaryProvider.exportBackup();
       
+      final fileName = 'diary_backup_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.json';
+      
       if (kIsWeb) {
-        // 웹에서는 다운로드 링크 제공
+        // 웹에서는 다운로드로 처리
+        downloadFile(fileName, backupData);
         
-        // 사용자에게 백업 데이터를 보여주는 다이얼로그
-        if (mounted) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('백업 파일이 다운로드되었습니다'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        // 모바일에서는 공유
+        await Share.shareXFiles(
+          [XFile.fromData(
+            Uint8List.fromList(backupData.codeUnits),
+            name: fileName,
+            mimeType: 'application/json',
+          )],
+          subject: '다이어리 백업',
+        );
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('백업 파일이 생성되었습니다'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('백업 실패: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  
+  Future<void> _importBackup(BuildContext context) async {
+    try {
+      const XTypeGroup typeGroup = XTypeGroup(
+        label: 'JSON files',
+        extensions: ['json'],
+      );
+      
+      final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
+      
+      if (file != null) {
+        final String content = await file.readAsString();
+        
+        if (context.mounted) {
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('백업 데이터'),
-              content: SizedBox(
-                width: double.maxFinite,
-                height: MediaQuery.of(context).size.height * 0.5,
-                child: SingleChildScrollView(
-                  child: SelectableText(
-                    backupData,
-                    style: const TextStyle(fontFamily: 'monospace'),
-                  ),
-                ),
+            builder: (ctx) => AlertDialog(
+              title: const Text('백업 복원'),
+              content: const Text(
+                '백업을 복원하시겠습니까?\n'
+                '현재 모든 데이터가 백업 파일의 데이터로 교체됩니다.',
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('닫기'),
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('취소'),
                 ),
                 TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('백업 데이터를 복사하여 저장하세요')),
-                    );
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    
+                    try {
+                      await context.read<DiaryProvider>().importBackup(content);
+                      
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('백업이 성공적으로 복원되었습니다'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('복원 실패: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
                   },
-                  child: const Text('복사'),
+                  child: const Text('복원'),
                 ),
               ],
             ),
           );
         }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('백업이 완료되었습니다')),
-        );
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('백업 중 오류가 발생했습니다: $e')),
+          SnackBar(
+            content: Text('파일 선택 실패: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isExporting = false;
-        });
       }
     }
   }
-
-  Future<void> _importBackup(DiaryProvider diaryProvider) async {
-    setState(() {
-      _isImporting = true;
-    });
-
-    try {
-      if (kIsWeb) {
-        // 웹에서는 텍스트 입력 다이얼로그
-        final controller = TextEditingController();
-        
-        final backupData = await showDialog<String>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('백업 데이터 입력'),
-            content: SizedBox(
-              width: double.maxFinite,
-              height: MediaQuery.of(context).size.height * 0.5,
-              child: TextField(
-                controller: controller,
-                maxLines: null,
-                expands: true,
-                decoration: const InputDecoration(
-                  hintText: '백업 JSON 데이터를 붙여넣으세요',
-                  border: OutlineInputBorder(),
+  
+  void _deleteAllData(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('모든 데이터 삭제'),
+        content: const Text(
+          '정말로 모든 일기를 삭제하시겠습니까?\n'
+          '이 작업은 되돌릴 수 없습니다.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              
+              // 확인 다이얼로그
+              showDialog(
+                context: context,
+                builder: (ctx2) => AlertDialog(
+                  title: const Text('최종 확인'),
+                  content: const Text('정말로 삭제하시겠습니까?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx2),
+                      child: const Text('취소'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        context.read<DiaryProvider>().deleteAllEntries();
+                        Navigator.pop(ctx2);
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('모든 데이터가 삭제되었습니다'),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red,
+                      ),
+                      child: const Text('삭제'),
+                    ),
+                  ],
                 ),
-              ),
+              );
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('취소'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, controller.text),
-                child: const Text('가져오기'),
-              ),
-            ],
-          ),
-        );
-
-        if (backupData != null && backupData.isNotEmpty) {
-          // 백업 데이터 검증
-          try {
-            final jsonData = jsonDecode(backupData);
-            if (jsonData['entries'] == null && jsonData['settings'] == null) {
-              throw const FormatException('Invalid backup format');
-            }
-          } catch (e) {
-            throw const FormatException('Invalid backup file');
-          }
-
-          await diaryProvider.importBackup(backupData);
-          
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('백업을 성공적으로 가져왔습니다')),
-            );
-          }
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('모바일에서만 파일 선택이 가능합니다')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('백업 가져오기 중 오류가 발생했습니다: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isImporting = false;
-        });
-      }
-    }
-  }
-
-  void _showCustomIconsDialog(ThemeProvider themeProvider) {
-    final iconController = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('커스텀 아이콘 관리'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: MediaQuery.of(context).size.height * 0.5,
-          child: Column(
-            children: [
-              // 아이콘 추가
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: iconController,
-                      decoration: const InputDecoration(
-                        hintText: '이모지 입력',
-                        border: OutlineInputBorder(),
-                      ),
-                      onSubmitted: (value) {
-                        if (value.trim().isNotEmpty) {
-                          themeProvider.addCustomIcon(value.trim());
-                          iconController.clear();
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () {
-                      final icon = iconController.text.trim();
-                      if (icon.isNotEmpty) {
-                        themeProvider.addCustomIcon(icon);
-                        iconController.clear();
-                      }
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // 커스텀 아이콘 목록
-              Expanded(
-                child: themeProvider.customIcons.isEmpty
-                    ? const Center(
-                        child: Text('커스텀 아이콘이 없습니다'),
-                      )
-                    : ListView.builder(
-                        itemCount: themeProvider.customIcons.length,
-                        itemBuilder: (context, index) {
-                          final icon = themeProvider.customIcons[index];
-                          return ListTile(
-                            leading: Text(
-                              icon,
-                              style: const TextStyle(fontSize: 24),
-                            ),
-                            title: Text(icon),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () {
-                                themeProvider.removeCustomIcon(icon);
-                              },
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              iconController.dispose();
-              Navigator.pop(context);
-            },
-            child: const Text('닫기'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showCustomTagsDialog(ThemeProvider themeProvider) {
-    final tagController = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('커스텀 태그 관리'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: MediaQuery.of(context).size.height * 0.5,
-          child: Column(
-            children: [
-              // 태그 추가
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: tagController,
-                      decoration: const InputDecoration(
-                        hintText: '태그 입력',
-                        border: OutlineInputBorder(),
-                      ),
-                      onSubmitted: (value) {
-                        if (value.trim().isNotEmpty) {
-                          themeProvider.addCustomTag(value.trim());
-                          tagController.clear();
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () {
-                      final tag = tagController.text.trim();
-                      if (tag.isNotEmpty) {
-                        themeProvider.addCustomTag(tag);
-                        tagController.clear();
-                      }
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // 커스텀 태그 목록
-              Expanded(
-                child: themeProvider.customTags.isEmpty
-                    ? const Center(
-                        child: Text('커스텀 태그가 없습니다'),
-                      )
-                    : ListView.builder(
-                        itemCount: themeProvider.customTags.length,
-                        itemBuilder: (context, index) {
-                          final tag = themeProvider.customTags[index];
-                          return ListTile(
-                            leading: const Icon(Icons.label),
-                            title: Text(tag),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () {
-                                themeProvider.removeCustomTag(tag);
-                              },
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              tagController.dispose();
-              Navigator.pop(context);
-            },
-            child: const Text('닫기'),
+            child: const Text('삭제'),
           ),
         ],
       ),

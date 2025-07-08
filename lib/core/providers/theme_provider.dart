@@ -39,6 +39,20 @@ class ThemeProvider extends ChangeNotifier {
     await _saveSettings();
   }
 
+  Future<void> toggleTheme() async {
+    if (_settings.isSystemTheme) {
+      // 시스템 테마 사용 중이면 수동 모드로 전환
+      _settings = _settings.copyWith(
+        isSystemTheme: false,
+        isDarkMode: !_settings.isDarkMode,
+      );
+    } else {
+      // 수동 모드면 다크모드 토글
+      _settings = _settings.copyWith(isDarkMode: !_settings.isDarkMode);
+    }
+    await _saveSettings();
+  }
+
   Future<void> setSystemTheme(bool value) async {
     _settings = _settings.copyWith(isSystemTheme: value);
     await _saveSettings();

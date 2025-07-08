@@ -166,16 +166,16 @@ class _CalendarTabState extends State<CalendarTab> {
           TextButton(
             onPressed: () async {
               try {
-                await diaryProvider.deleteEntry(entry.date);
+                await diaryProvider.deleteEntry(entry.id);
                 if (context.mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.white),
-                          SizedBox(width: 8),
-                          Text('일기가 삭제되었습니다'),
+                          const Icon(Icons.check_circle, color: Colors.white),
+                          const SizedBox(width: 8),
+                          const Text('일기가 삭제되었습니다'),
                         ],
                       ),
                       backgroundColor: Colors.green,
@@ -527,7 +527,7 @@ class _CalendarTabState extends State<CalendarTab> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        '수정: ${DateFormat('HH:mm').format(DateTime.parse(entry.lastModified))}',
+                        '수정: ${DateFormat('HH:mm').format(entry.updatedAt)}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).disabledColor,
                         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:diary_app/core/models/diary_entry.dart';
 import 'package:diary_app/core/services/storage_service.dart';
+// import 'package:diary_app/core/services/widget_service.dart';
 
 class DiaryProvider extends ChangeNotifier {
   List<DiaryEntry> _entries = [];
@@ -9,13 +10,23 @@ class DiaryProvider extends ChangeNotifier {
   String _searchQuery = '';
   List<String> _selectedTags = [];
   bool _isLoading = false;
+  
+  // final WidgetService _widgetService = WidgetService();
 
   List<DiaryEntry> get entries => _entries;
-  List<DiaryEntry> get filteredEntries => _filteredEntries;
+  List<DiaryEntry> get filteredEntries => _searchQuery.isNotEmpty || _selectedTags.isNotEmpty 
+      ? _filteredEntries 
+      : _entries;
   DateTime get selectedDate => _selectedDate;
   String get searchQuery => _searchQuery;
   List<String> get selectedTags => _selectedTags;
   bool get isLoading => _isLoading;
+
+  // 날짜별 메모만 가져오기
+  List<DiaryEntry> get datedEntries => _entries.where((e) => e.type == EntryType.dated).toList();
+  
+  // 일반 메모만 가져오기
+  List<DiaryEntry> get generalNotes => _entries.where((e) => e.type == EntryType.general).toList();
 
   DiaryProvider() {
     loadEntries();
@@ -27,6 +38,7 @@ class DiaryProvider extends ChangeNotifier {
     
     try {
       _entries = await StorageService.instance.loadAllEntries();
+      _sortEntries();
       _applyFilters();
     } catch (e) {
       debugPrint('Failed to load entries: $e');
@@ -44,7 +56,9 @@ class DiaryProvider extends ChangeNotifier {
   DiaryEntry? getEntryForDate(DateTime date) {
     final dateString = _formatDate(date);
     try {
-      return _entries.where((entry) => entry.date == dateString).first;
+      return _entries.where((entry) => 
+        entry.type == EntryType.dated && entry.date == dateString
+      ).first;
     } catch (e) {
       return null;
     }
@@ -52,39 +66,75 @@ class DiaryProvider extends ChangeNotifier {
 
   List<DiaryEntry> getEntriesForMonth(DateTime month) {
     return _entries.where((entry) {
-      final entryDate = DateTime.parse(entry.date);
+      if (entry.type != EntryType.dated || entry.date == null) return false;
+      final entryDate = DateTime.parse(entry.date!);
       return entryDate.year == month.year && entryDate.month == month.month;
     }).toList();
   }
 
-  Future<void> saveEntry(DiaryEntry entry) async {
+  Future<void> addEntry(DiaryEntry entry) async {
     try {
       await StorageService.instance.saveEntry(entry);
-      
-      // 기존 엔트리 업데이트 또는 새 엔트리 추가
-      final existingIndex = _entries.indexWhere((e) => e.date == entry.date);
-      if (existingIndex != -1) {
-        _entries[existingIndex] = entry;
-      } else {
-        _entries.add(entry);
-      }
-      
-      // 날짜순으로 정렬
-      _entries.sort((a, b) => b.date.compareTo(a.date));
+      _entries.add(entry);
+      _sortEntries();
       _applyFilters();
       notifyListeners();
+      
+      // 날짜별 메모인 경우에만 위젯 업데이트
+      // if (entry.type == EntryType.dated) {
+      //   await _widgetService.updateWidget();
+      // }
     } catch (e) {
-      debugPrint('Failed to save entry: $e');
+      debugPrint('Failed to add entry: $e');
       rethrow;
     }
   }
 
-  Future<void> deleteEntry(String date) async {
+  Future<void> updateEntry(DiaryEntry entry) async {
     try {
-      await StorageService.instance.deleteEntry(date);
-      _entries.removeWhere((entry) => entry.date == date);
+      await StorageService.instance.saveEntry(entry);
+      
+      // ID로 기존 엔트리 찾아서 업데이트
+      final existingIndex = _entries.indexWhere((e) => e.id == entry.id);
+      if (existingIndex != -1) {
+        _entries[existingIndex] = entry;
+      }
+      
+      _sortEntries();
       _applyFilters();
       notifyListeners();
+      
+      // 날짜별 메모인 경우에만 위젯 업데이트
+      // if (entry.type == EntryType.dated) {
+      //   await _widgetService.updateWidget();
+      // }
+    } catch (e) {
+      debugPrint('Failed to update entry: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> saveEntry(DiaryEntry entry) async {
+    // 기존 코드와의 호환성을 위해 유지
+    if (_entries.any((e) => e.id == entry.id)) {
+      await updateEntry(entry);
+    } else {
+      await addEntry(entry);
+    }
+  }
+
+  Future<void> deleteEntry(String id) async {
+    try {
+      final entry = _entries.firstWhere((e) => e.id == id);
+      await StorageService.instance.deleteEntry(id);
+      _entries.removeWhere((entry) => entry.id == id);
+      _applyFilters();
+      notifyListeners();
+      
+      // 날짜별 메모인 경우에만 위젯 업데이트
+      // if (entry.type == EntryType.dated) {
+      //   await _widgetService.updateWidget();
+      // }
     } catch (e) {
       debugPrint('Failed to delete entry: $e');
       rethrow;
@@ -132,6 +182,20 @@ class DiaryProvider extends ChangeNotifier {
     }).toList();
   }
 
+  void _sortEntries() {
+    _entries.sort((a, b) {
+      // 날짜별 메모는 날짜순으로, 일반 메모는 수정시간순으로 정렬
+      if (a.type == EntryType.dated && b.type == EntryType.dated) {
+        return b.date!.compareTo(a.date!);
+      } else if (a.type == EntryType.general && b.type == EntryType.general) {
+        return b.updatedAt.compareTo(a.updatedAt);
+      } else {
+        // 타입이 다른 경우 날짜별 메모를 먼저
+        return a.type == EntryType.dated ? -1 : 1;
+      }
+    });
+  }
+
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
@@ -156,13 +220,34 @@ class DiaryProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> deleteAllEntries() async {
+    try {
+      // 모든 엔트리 삭제
+      for (final entry in _entries) {
+        await StorageService.instance.deleteEntry(entry.id);
+      }
+      _entries.clear();
+      _filteredEntries.clear();
+      notifyListeners();
+      
+      // 위젯 업데이트
+      // await _widgetService.updateWidget();
+    } catch (e) {
+      debugPrint('Failed to delete all entries: $e');
+      rethrow;
+    }
+  }
+
   // 통계 정보
   int get totalEntries => _entries.length;
+  int get totalDatedEntries => datedEntries.length;
+  int get totalGeneralNotes => generalNotes.length;
   
   int get thisMonthEntries {
     final now = DateTime.now();
-    return _entries.where((entry) {
-      final entryDate = DateTime.parse(entry.date);
+    return datedEntries.where((entry) {
+      if (entry.date == null) return false;
+      final entryDate = DateTime.parse(entry.date!);
       return entryDate.year == now.year && entryDate.month == now.month;
     }).length;
   }

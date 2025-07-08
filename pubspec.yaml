@@ -3,8 +3,8 @@ description: A simple and efficient diary app for daily reflections
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
-  flutter: ">=3.10.0"
+  sdk: '>=2.19.0 <3.0.0'
+  flutter: ">=3.7.0"
 
 dependencies:
   flutter:
@@ -14,20 +14,21 @@ dependencies:
   provider: ^6.1.1
   
   # Local Storage
-  path_provider: ^2.1.1
+  path_provider: ^2.1.5
   
   # JSON Handling
   json_annotation: ^4.8.1
   
   # Date Utils
-  intl: ^0.20.2
+  intl: ^0.19.0
   
   # UI Components
   table_calendar: ^3.0.9
   
   # File operations
-  file_selector: ^1.0.2      # Flutter 팀이 관리
-  share_plus: ^7.2.1
+  file_selector: ^1.0.3
+  share_plus: ^7.2.2
+  permission_handler: ^12.0.1
   
   # Icons
   cupertino_icons: ^1.0.6
