@@ -14,18 +14,32 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMixin {
   final _searchController = TextEditingController();
   late TabController _tabController;
-  List<DiaryEntry> _datedResults = [];
-  List<DiaryEntry> _generalResults = [];
   String _searchQuery = '';
+  List<String> _availableTags = [];
+  List<String> _selectedTags = [];
+  bool _showTagFilter = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     
-    // 초기에 전체 메모를 로드
+    // 초기에 태그 목록을 로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _performSearch(''); // 빈 문자열로 전체 메모 로드
+      _loadAvailableTags();
+    });
+  }
+
+  void _loadAvailableTags() {
+    final diaryProvider = context.read<DiaryProvider>();
+    final allTags = <String>{};
+    
+    for (final entry in diaryProvider.entries) {
+      allTags.addAll(entry.tags);
+    }
+    
+    setState(() {
+      _availableTags = allTags.toList()..sort();
     });
   }
 
@@ -36,95 +50,192 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
     super.dispose();
   }
 
+  List<DiaryEntry> _filterEntries(List<DiaryEntry> entries) {
+    List<DiaryEntry> filteredEntries = entries;
+    
+    // 태그 필터 적용
+    if (_selectedTags.isNotEmpty) {
+      filteredEntries = filteredEntries.where((entry) {
+        return _selectedTags.any((tag) => entry.tags.contains(tag));
+      }).toList();
+    }
+    
+    // 텍스트 검색 적용
+    if (_searchQuery.isNotEmpty) {
+      filteredEntries = filteredEntries.where((entry) {
+        return entry.title.toLowerCase().contains(_searchQuery) ||
+               entry.content.toLowerCase().contains(_searchQuery) ||
+               entry.allEmojis.any((emoji) => emoji.contains(_searchQuery)) ||
+               entry.tags.any((tag) => tag.toLowerCase().contains(_searchQuery));
+      }).toList();
+    }
+    
+    return filteredEntries;
+  }
+
   void _performSearch(String query) {
     setState(() {
       _searchQuery = query.toLowerCase();
-      final diaryProvider = context.read<DiaryProvider>();
-      
-      if (_searchQuery.isEmpty) {
-        // 검색어가 없으면 전체 메모를 표시
-        _datedResults = diaryProvider.datedEntries
-          ..sort((a, b) => b.date!.compareTo(a.date!));
-        _generalResults = diaryProvider.generalNotes
-          ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      } else {
-        // 날짜별 메모 검색
-        _datedResults = diaryProvider.datedEntries.where((entry) {
-          return entry.title.toLowerCase().contains(_searchQuery) ||
-                 entry.content.toLowerCase().contains(_searchQuery) ||
-                 entry.allEmojis.any((emoji) => emoji.contains(_searchQuery)) ||
-                 entry.tags.any((tag) => tag.toLowerCase().contains(_searchQuery));
-        }).toList()
-          ..sort((a, b) => b.date!.compareTo(a.date!));
-          
-        // 일반 메모 검색
-        _generalResults = diaryProvider.generalNotes.where((entry) {
-          return entry.title.toLowerCase().contains(_searchQuery) ||
-                 entry.content.toLowerCase().contains(_searchQuery) ||
-                 entry.tags.any((tag) => tag.toLowerCase().contains(_searchQuery));
-        }).toList()
-          ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('검색'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: '날짜별 메모 (${_datedResults.length})'),
-            Tab(text: '일반 메모 (${_generalResults.length})'),
-          ],
-        ),
-      ),
-      body: Column(
-        children: [
-          // 검색 바
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: '제목, 내용, 태그로 검색',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _performSearch('');
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30.0),
-                ),
-                filled: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20.0,
-                  vertical: 16.0,
-                ),
-              ),
-              onChanged: _performSearch,
-            ),
-          ),
-          
-          // 검색 결과
-          Expanded(
-            child: TabBarView(
+    return Consumer<DiaryProvider>(
+      builder: (context, diaryProvider, child) {
+        // 태그 목록 업데이트
+        final allTags = <String>{};
+        for (final entry in diaryProvider.entries) {
+          allTags.addAll(entry.tags);
+        }
+        _availableTags = allTags.toList()..sort();
+
+        // 검색 결과 계산
+        final datedResults = _filterEntries(diaryProvider.datedEntries);
+        datedResults.sort((a, b) => b.date!.compareTo(a.date!));
+        
+        final generalResults = _filterEntries(diaryProvider.generalNotes);
+        generalResults.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('검색'),
+            bottom: TabBar(
               controller: _tabController,
-              children: [
-                _buildSearchResults(_datedResults, true),
-                _buildSearchResults(_generalResults, false),
+              tabs: [
+                Tab(text: '날짜별 메모 (${datedResults.length})'),
+                Tab(text: '일반 메모 (${generalResults.length})'),
               ],
             ),
           ),
-        ],
-      ),
+          body: Column(
+            children: [
+              // 검색 바
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: '제목, 내용, 태그로 검색',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_searchController.text.isNotEmpty)
+                              IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  _performSearch('');
+                                },
+                              ),
+                            IconButton(
+                              icon: Icon(
+                                _showTagFilter ? Icons.filter_list : Icons.filter_list_outlined,
+                                color: _selectedTags.isNotEmpty ? Theme.of(context).primaryColor : null,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _showTagFilter = !_showTagFilter;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                        ),
+                        filled: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20.0,
+                          vertical: 16.0,
+                        ),
+                      ),
+                      onChanged: _performSearch,
+                    ),
+                    
+                    // 태그 필터 UI
+                    if (_showTagFilter) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  '태그로 필터링',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                if (_selectedTags.isNotEmpty)
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _selectedTags.clear();
+                                      });
+                                    },
+                                    child: const Text('초기화'),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            if (_availableTags.isEmpty)
+                              const Text(
+                                '사용 가능한 태그가 없습니다',
+                                style: TextStyle(color: Colors.grey),
+                              )
+                            else
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                children: _availableTags.map((tag) {
+                                  final isSelected = _selectedTags.contains(tag);
+                                  return FilterChip(
+                                    label: Text(tag),
+                                    selected: isSelected,
+                                    onSelected: (selected) {
+                                      setState(() {
+                                        if (selected) {
+                                          _selectedTags.add(tag);
+                                        } else {
+                                          _selectedTags.remove(tag);
+                                        }
+                                      });
+                                    },
+                                    selectedColor: Theme.of(context).primaryColor.withOpacity(0.3),
+                                  );
+                                }).toList(),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              
+              // 검색 결과
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildSearchResults(datedResults, true),
+                    _buildSearchResults(generalResults, false),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
