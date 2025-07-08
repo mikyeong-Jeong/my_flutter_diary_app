@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 // import 'package:home_widget/home_widget.dart';
 import 'core/providers/diary_provider.dart';
 import 'core/providers/theme_provider.dart';
@@ -158,6 +159,16 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.themeMode,
+          locale: const Locale('ko', 'KR'),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ko', 'KR'),
+            Locale('en', 'US'),
+          ],
           initialRoute: '/',
           routes: {
             '/': (context) => const HomeScreen(),

@@ -23,6 +23,7 @@ class _WriteScreenState extends State<WriteScreen> {
   late DiaryEntry _entry;
   bool _isEditing = false;
   DateTime _selectedDate = DateTime.now();
+  bool _isInitialized = false; // 초기화 상태 추적
 
   // 기본 기분 이모지 (8개로 축소)
   final List<Map<String, String>> _moods = [
@@ -46,29 +47,34 @@ class _WriteScreenState extends State<WriteScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     
-    final arguments = ModalRoute.of(context)?.settings.arguments;
-    if (arguments is DiaryEntry) {
-      _entry = arguments;
-      _isEditing = _entry.content.isNotEmpty || _entry.title.isNotEmpty;
-      
-      if (_entry.date != null) {
-        _selectedDate = DateTime.parse(_entry.date!);
+    // 한 번만 초기화
+    if (!_isInitialized) {
+      final arguments = ModalRoute.of(context)?.settings.arguments;
+      if (arguments is DiaryEntry) {
+        _entry = arguments;
+        _isEditing = _entry.content.isNotEmpty || _entry.title.isNotEmpty;
+        
+        if (_entry.date != null) {
+          _selectedDate = DateTime.parse(_entry.date!);
+        }
+        
+        if (_isEditing) {
+          _titleController.text = _entry.title;
+          _contentController.text = _entry.content;
+          _selectedMoods = List.from(_entry.moods);
+          _selectedCustomEmojis = List.from(_entry.customEmojis);
+          _selectedTags = List.from(_entry.tags);
+        }
+      } else {
+        _entry = DiaryEntry(
+          date: DateTime.now().toIso8601String(),
+          title: '',
+          content: '',
+          type: EntryType.dated,
+        );
+        _selectedDate = DateTime.now();
       }
-      
-      if (_isEditing) {
-        _titleController.text = _entry.title;
-        _contentController.text = _entry.content;
-        _selectedMoods = List.from(_entry.moods);
-        _selectedCustomEmojis = List.from(_entry.customEmojis);
-        _selectedTags = List.from(_entry.tags);
-      }
-    } else {
-      _entry = DiaryEntry(
-        date: DateTime.now().toIso8601String(),
-        title: '',
-        content: '',
-        type: EntryType.dated,
-      );
+      _isInitialized = true;
     }
   }
 
@@ -82,47 +88,61 @@ class _WriteScreenState extends State<WriteScreen> {
   }
 
   void _saveDiary() async {
-    // 날짜별 메모의 경우 하루에 1개만 허용
-    if (_entry.type == EntryType.dated && !_isEditing) {
-      final existingEntry = context.read<DiaryProvider>().getEntryForDate(
-        _entry.date != null ? DateTime.parse(_entry.date!) : DateTime.now()
-      );
+    print('Debug: _selectedDate = $_selectedDate');
+    print('Debug: _formatDate(_selectedDate) = ${_formatDate(_selectedDate)}');
+    print('Debug: _entry.date = ${_entry.date}');
+    print('Debug: _isEditing = $_isEditing');
+    
+    // 날짜별 메모의 경우 날짜 변경 시 중복 체크
+    if (_entry.type == EntryType.dated) {
+      final currentDate = _formatDate(_selectedDate);
       
-      if (existingEntry != null) {
-        final shouldOverwrite = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('이미 작성된 일기가 있습니다'),
-            content: const Text('오늘 일기를 덮어쓰시겠습니까?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('취소'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('덮어쓰기'),
-              ),
-            ],
-          ),
-        );
+      // 날짜가 변경되었거나 새 메모인 경우 중복 체크
+      if (!_isEditing || (_isEditing && _entry.date != currentDate)) {
+        final existingEntry = context.read<DiaryProvider>().getEntryForDate(_selectedDate);
         
-        if (shouldOverwrite != true) return;
-        
-        // 기존 엔트리를 삭제하고 새로 생성
-        await context.read<DiaryProvider>().deleteEntry(existingEntry.id);
+        // 기존 메모 편집 시 자기 자신은 제외
+        if (existingEntry != null && existingEntry.id != _entry.id) {
+          final shouldOverwrite = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('이미 작성된 일기가 있습니다'),
+              content: Text('${DateFormat('yyyy년 M월 d일').format(_selectedDate)}에 이미 일기가 있습니다.\n덮어쓰시겠습니까?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('취소'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('덮어쓰기'),
+                ),
+              ],
+            ),
+          );
+          
+          if (shouldOverwrite != true) return;
+          
+          // 기존 엔트리를 삭제
+          await context.read<DiaryProvider>().deleteEntry(existingEntry.id);
+        }
       }
     }
+
+    final newDate = _entry.type == EntryType.dated ? _formatDate(_selectedDate) : _entry.date;
+    print('Debug: newDate = $newDate');
 
     final updatedEntry = _entry.copyWith(
       title: _titleController.text.trim(),
       content: _contentController.text.trim(),
-      date: _entry.type == EntryType.dated ? _formatDate(_selectedDate) : _entry.date,
+      date: newDate,
       moods: _selectedMoods,
       customEmojis: _selectedCustomEmojis,
       tags: _selectedTags,
       updatedAt: DateTime.now(),
     );
+
+    print('Debug: updatedEntry.date = ${updatedEntry.date}');
 
     final diaryProvider = context.read<DiaryProvider>();
     
@@ -130,12 +150,18 @@ class _WriteScreenState extends State<WriteScreen> {
       if (_isEditing) {
         await diaryProvider.updateEntry(updatedEntry);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('저장되었습니다'), backgroundColor: Colors.green),
+          SnackBar(
+            content: Text('저장되었습니다 (${DateFormat('M월 d일').format(_selectedDate)})'),
+            backgroundColor: Colors.green,
+          ),
         );
       } else {
         await diaryProvider.addEntry(updatedEntry);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('작성되었습니다'), backgroundColor: Colors.green),
+          SnackBar(
+            content: Text('작성되었습니다 (${DateFormat('M월 d일').format(_selectedDate)})'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
       Navigator.pop(context);
@@ -198,10 +224,24 @@ class _WriteScreenState extends State<WriteScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
-    if (picked != null && picked != _selectedDate) {
+    if (picked != null) {
+      print('Debug: 선택된 날짜 - $picked');
+      print('Debug: 기존 날짜 - $_selectedDate');
+      
       setState(() {
         _selectedDate = picked;
       });
+      
+      print('Debug: 업데이트된 날짜 - $_selectedDate');
+      
+      // 날짜 변경 피드백
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('날짜가 ${DateFormat('yyyy년 M월 d일').format(picked)}로 변경되었습니다'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.blue,
+        ),
+      );
     }
   }
 
@@ -239,6 +279,7 @@ class _WriteScreenState extends State<WriteScreen> {
             children: [
             // 날짜/타입 표시
             Container(
+              key: ValueKey(_selectedDate), // 날짜가 변경되면 위젯 재생성
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Row(
                 children: [
@@ -289,9 +330,11 @@ class _WriteScreenState extends State<WriteScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 내용 입력 (세로 스크롤 적용)
-            SizedBox(
-              height: 150,
+            // 내용 입력 (자동 높이 조정)
+            Container(
+              constraints: const BoxConstraints(
+                minHeight: 150, // 최소 높이 150px
+              ),
               child: TextField(
                 controller: _contentController,
                 decoration: InputDecoration(
@@ -300,8 +343,8 @@ class _WriteScreenState extends State<WriteScreen> {
                   border: const OutlineInputBorder(),
                   alignLabelWithHint: true,
                 ),
-                maxLines: null,
-                expands: true,
+                maxLines: null, // 무제한 라인
+                minLines: 6, // 최소 6라인
                 keyboardType: TextInputType.multiline,
                 textInputAction: TextInputAction.newline,
               ),

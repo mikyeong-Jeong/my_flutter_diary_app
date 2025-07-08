@@ -100,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         );
                       },
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                      backgroundColor: Colors.orange,
                       child: const Icon(Icons.note_add, size: 28),
                     ),
                   ),
@@ -185,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         );
                       },
-                      backgroundColor: Color(0xFFAA76FF),
+                      backgroundColor: Colors.orange,
                       child: const Icon(Icons.note_add, size: 32),
                     ),
                   ),

@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:typed_data';
+import 'dart:io';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
@@ -247,23 +249,57 @@ class SettingsScreen extends StatelessWidget {
           );
         }
       } else {
-        // 모바일에서는 공유
-        await Share.shareXFiles(
-          [XFile.fromData(
-            Uint8List.fromList(backupData.codeUnits),
-            name: fileName,
-            mimeType: 'application/json',
-          )],
-          subject: '다이어리 백업',
-        );
-        
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('백업 파일이 생성되었습니다'),
-              backgroundColor: Colors.green,
-            ),
+        // 모바일에서는 Documents 폴더에 저장
+        try {
+          final directory = await getApplicationDocumentsDirectory();
+          final file = File('${directory.path}/$fileName');
+          await file.writeAsString(backupData);
+          
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('백업 완료'),
+                content: Text('백업 파일이 저장되었습니다:\n${file.path}'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('확인'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      // 파일 공유
+                      await Share.shareXFiles(
+                        [XFile(file.path)],
+                        subject: '다이어리 백업',
+                      );
+                    },
+                    child: const Text('공유'),
+                  ),
+                ],
+              ),
+            );
+          }
+        } catch (e) {
+          // Documents 폴더 접근 실패 시 공유로 대체
+          await Share.shareXFiles(
+            [XFile.fromData(
+              Uint8List.fromList(backupData.codeUnits),
+              name: fileName,
+              mimeType: 'application/json',
+            )],
+            subject: '다이어리 백업',
           );
+          
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('백업 파일이 공유되었습니다'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
         }
       }
     } catch (e) {
@@ -280,72 +316,159 @@ class SettingsScreen extends StatelessWidget {
   
   Future<void> _importBackup(BuildContext context) async {
     try {
-      const XTypeGroup typeGroup = XTypeGroup(
-        label: 'JSON files',
-        extensions: ['json'],
-      );
-      
-      final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
-      
-      if (file != null) {
-        final String content = await file.readAsString();
+      if (kIsWeb) {
+        // 웹에서는 파일 선택기 사용
+        const XTypeGroup typeGroup = XTypeGroup(
+          label: 'JSON files',
+          extensions: ['json'],
+        );
+        
+        final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
+        
+        if (file != null) {
+          final String content = await file.readAsString();
+          await _processImport(context, content);
+        }
+      } else {
+        // 모바일에서는 Documents 폴더에서 백업 파일 목록 표시
+        final directory = await getApplicationDocumentsDirectory();
+        final backupFiles = directory
+            .listSync()
+            .where((file) => file.path.endsWith('.json') && file.path.contains('diary_backup'))
+            .cast<File>()
+            .toList();
         
         if (context.mounted) {
-          showDialog(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('백업 복원'),
-              content: const Text(
-                '백업을 복원하시겠습니까?\n'
-                '현재 모든 데이터가 백업 파일의 데이터로 교체됩니다.',
+          if (backupFiles.isEmpty) {
+            // 백업 파일이 없으면 파일 선택기 사용
+            const XTypeGroup typeGroup = XTypeGroup(
+              label: 'JSON files',
+              extensions: ['json'],
+            );
+            
+            final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
+            
+            if (file != null) {
+              final String content = await file.readAsString();
+              await _processImport(context, content);
+            }
+          } else {
+            // 백업 파일 목록에서 선택
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('백업 파일 선택'),
+                content: SizedBox(
+                  width: double.maxFinite,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('복원할 백업 파일을 선택하세요:'),
+                      const SizedBox(height: 16),
+                      ...backupFiles.map((file) {
+                        final fileName = file.path.split('/').last;
+                        final fileDate = file.lastModifiedSync();
+                        return ListTile(
+                          title: Text(fileName),
+                          subtitle: Text(DateFormat('yyyy-MM-dd HH:mm').format(fileDate)),
+                          onTap: () async {
+                            Navigator.pop(ctx);
+                            final content = await file.readAsString();
+                            await _processImport(context, content);
+                          },
+                        );
+                      }).toList(),
+                      const Divider(),
+                      ListTile(
+                        leading: const Icon(Icons.folder_open),
+                        title: const Text('다른 파일 선택'),
+                        onTap: () async {
+                          Navigator.pop(ctx);
+                          const XTypeGroup typeGroup = XTypeGroup(
+                            label: 'JSON files',
+                            extensions: ['json'],
+                          );
+                          
+                          final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
+                          
+                          if (file != null) {
+                            final String content = await file.readAsString();
+                            await _processImport(context, content);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('취소'),
+                  ),
+                ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('취소'),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    
-                    try {
-                      await context.read<DiaryProvider>().importBackup(content);
-                      
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('백업이 성공적으로 복원되었습니다'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('복원 실패: $e'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
-                  },
-                  child: const Text('복원'),
-                ),
-              ],
-            ),
-          );
+            );
+          }
         }
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('파일 선택 실패: $e'),
+            content: Text('파일 접근 실패: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
+    }
+  }
+  
+  Future<void> _processImport(BuildContext context, String content) async {
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('백업 복원'),
+          content: const Text(
+            '백업을 복원하시겠습니까?\n'
+            '현재 모든 데이터가 백업 파일의 데이터로 교체됩니다.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                
+                try {
+                  await context.read<DiaryProvider>().importBackup(content);
+                  
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('백업이 성공적으로 복원되었습니다'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('복원 실패: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('복원'),
+            ),
+          ],
+        ),
+      );
     }
   }
   
