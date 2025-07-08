@@ -74,6 +74,7 @@ class DiaryProvider extends ChangeNotifier {
 
   Future<void> addEntry(DiaryEntry entry) async {
     try {
+      // 날짜별 메모의 경우 하루에 1개만 허용 (UI에서 처리하므로 여기서는 단순 추가)
       await StorageService.instance.saveEntry(entry);
       _entries.add(entry);
       _sortEntries();

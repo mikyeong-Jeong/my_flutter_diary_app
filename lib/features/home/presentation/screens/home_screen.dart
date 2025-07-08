@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:table_calendar/table_calendar.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
+import '../widgets/calendar_tab.dart';
+import '../widgets/entries_tab.dart';
+import '../widgets/general_notes_tab.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,28 +13,23 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
-  CalendarFormat _calendarFormat = CalendarFormat.month;
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _selectedDay = DateTime.now();
+    _tabController = TabController(length: 3, vsync: this);
     
-    // 다이어리 데이터 로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DiaryProvider>().loadEntries();
     });
   }
 
-  List<DiaryEntry> _getEntriesForDay(DateTime day, List<DiaryEntry> allEntries) {
-    return allEntries.where((entry) {
-      if (entry.date == null) return false;
-      final entryDate = DateTime.parse(entry.date!);
-      return isSameDay(entryDate, day);
-    }).toList();
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -51,173 +47,158 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => Navigator.pushNamed(context, '/settings'),
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(icon: Icon(Icons.calendar_today), text: '달력'),
+            Tab(icon: Icon(Icons.book), text: '일기'),
+            Tab(icon: Icon(Icons.note), text: '메모'),
+          ],
+        ),
       ),
-      body: Consumer<DiaryProvider>(
-        builder: (context, diaryProvider, child) {
-          final entries = diaryProvider.entries;
-          final selectedDayEntries = _selectedDay != null 
-              ? _getEntriesForDay(_selectedDay!, entries)
-              : [];
-
-          return Column(
-            children: [
-              // 달력
-              TableCalendar<DiaryEntry>(
-                firstDay: DateTime.utc(2020, 1, 1),
-                lastDay: DateTime.utc(2030, 12, 31),
-                focusedDay: _focusedDay,
-                calendarFormat: _calendarFormat,
-                selectedDayPredicate: (day) {
-                  return isSameDay(_selectedDay, day);
-                },
-                eventLoader: (day) {
-                  return _getEntriesForDay(day, entries);
-                },
-                startingDayOfWeek: StartingDayOfWeek.sunday,
-                calendarStyle: CalendarStyle(
-                  outsideDaysVisible: false,
-                  weekendTextStyle: TextStyle(color: Colors.red[400]),
-                  selectedDecoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    shape: BoxShape.circle,
-                  ),
-                  todayDecoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.5),
-                    shape: BoxShape.circle,
-                  ),
-                  markerDecoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                headerStyle: HeaderStyle(
-                  formatButtonVisible: true,
-                  titleCentered: true,
-                  formatButtonShowsNext: false,
-                  formatButtonDecoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  formatButtonTextStyle: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-                onDaySelected: (selectedDay, focusedDay) {
-                  if (!isSameDay(_selectedDay, selectedDay)) {
-                    setState(() {
-                      _selectedDay = selectedDay;
-                      _focusedDay = focusedDay;
-                    });
-                  }
-                },
-                onFormatChanged: (format) {
-                  if (_calendarFormat != format) {
-                    setState(() {
-                      _calendarFormat = format;
-                    });
-                  }
-                },
-                onPageChanged: (focusedDay) {
-                  _focusedDay = focusedDay;
-                },
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: const [
+                  CalendarTab(),
+                  EntriesTab(),
+                  GeneralNotesTab(),
+                ],
               ),
-              const SizedBox(height: 8.0),
-              // 선택된 날짜의 일기 목록
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16.0),
-                  child: selectedDayEntries.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.note_add,
-                                size: 64,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                '${DateFormat('M월 d일').format(_selectedDay!)}의 일기가 없습니다',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '새로운 일기를 작성해보세요',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[500],
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: selectedDayEntries.length,
-                          itemBuilder: (context, index) {
-                            final entry = selectedDayEntries[index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 8.0),
-                              child: ListTile(
-                                title: Text(
-                                  entry.title.isEmpty ? '제목 없음' : entry.title,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      entry.content,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      DateFormat('HH:mm').format(DateTime.parse(entry.date!)),
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                onTap: () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/write',
-                                    arguments: entry,
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(
-            context,
-            '/write',
-            arguments: DiaryEntry(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              date: (_selectedDay ?? DateTime.now()).toIso8601String(),
-              title: '',
-              content: '',
-              mood: '',
             ),
-          );
+          ],
+        ),
+      ),
+      floatingActionButton: Consumer<DiaryProvider>(
+        builder: (context, diaryProvider, child) {
+          final selectedIndex = _tabController.index;
+          
+          if (selectedIndex == 0 || selectedIndex == 1) {
+            // 달력/일기 탭: 날짜별 메모 추가 + 일반 메모 추가
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 일반 메모 추가 버튼
+                  SizedBox(
+                    width: 56,
+                    height: 56,
+                    child: FloatingActionButton(
+                      heroTag: "general_note",
+                      onPressed: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/write',
+                          arguments: DiaryEntry(
+                            title: '',
+                            content: '',
+                            type: EntryType.general,
+                          ),
+                        );
+                      },
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                      child: const Icon(Icons.note_add, size: 28),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // 날짜별 메모 추가 버튼 (메인)
+                  SizedBox(
+                    width: 64,
+                    height: 64,
+                    child: FloatingActionButton(
+                      heroTag: "dated_note",
+                      onPressed: () {
+                        final selectedDate = diaryProvider.selectedDate;
+                        final existingEntry = diaryProvider.getEntryForDate(selectedDate);
+                        
+                        if (existingEntry != null) {
+                          // 기존 메모가 있으면 편집
+                          Navigator.pushNamed(context, '/write', arguments: existingEntry);
+                        } else {
+                          // 새 메모 작성
+                          Navigator.pushNamed(
+                            context,
+                            '/write',
+                            arguments: DiaryEntry(
+                              date: _formatDate(selectedDate),
+                              title: '',
+                              content: '',
+                              type: EntryType.dated,
+                            ),
+                          );
+                        }
+                      },
+                      child: const Icon(Icons.add, size: 32),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          } else {
+            // 메모 탭: 일반 메모 추가 + 날짜별 메모 추가
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 날짜별 메모 추가 버튼
+                  SizedBox(
+                    width: 56,
+                    height: 56,
+                    child: FloatingActionButton(
+                      heroTag: "dated_note_small",
+                      onPressed: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/write',
+                          arguments: DiaryEntry(
+                            date: _formatDate(DateTime.now()),
+                            title: '',
+                            content: '',
+                            type: EntryType.dated,
+                          ),
+                        );
+                      },
+                      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8),
+                      child: const Icon(Icons.calendar_today, size: 28),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // 일반 메모 추가 버튼 (메인)
+                  SizedBox(
+                    width: 64,
+                    height: 64,
+                    child: FloatingActionButton(
+                      heroTag: "general_note_main",
+                      onPressed: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/write',
+                          arguments: DiaryEntry(
+                            title: '',
+                            content: '',
+                            type: EntryType.general,
+                          ),
+                        );
+                      },
+                      backgroundColor: Color(0xFFAA76FF),
+                      child: const Icon(Icons.note_add, size: 32),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
         },
-        child: const Icon(Icons.add),
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 }

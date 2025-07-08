@@ -11,10 +11,9 @@ DiaryEntry _$DiaryEntryFromJson(Map<String, dynamic> json) => DiaryEntry(
       date: json['date'] as String?,
       title: json['title'] as String,
       content: json['content'] as String,
-      mood: json['mood'] as String? ?? '',
+      moods: (json['moods'] as List<dynamic>?)?.map((e) => e as String).toList(),
       tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      icons:
-          (json['icons'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      customEmojis: (json['customEmojis'] as List<dynamic>?)?.map((e) => e as String).toList(),
       createdAt: json['createdAt'] == null
           ? null
           : DateTime.parse(json['createdAt'] as String),
@@ -31,9 +30,9 @@ Map<String, dynamic> _$DiaryEntryToJson(DiaryEntry instance) =>
       'date': instance.date,
       'title': instance.title,
       'content': instance.content,
-      'mood': instance.mood,
+      'moods': instance.moods,
       'tags': instance.tags,
-      'icons': instance.icons,
+      'customEmojis': instance.customEmojis,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
       'type': _$EntryTypeEnumMap[instance.type]!,
