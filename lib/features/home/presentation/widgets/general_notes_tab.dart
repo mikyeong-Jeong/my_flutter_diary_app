@@ -60,17 +60,30 @@ class GeneralNotesTab extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 제목
-                      if (note.title.isNotEmpty) ...[
-                        Text(
-                          note.title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                      // 제목과 이모지
+                      Row(
+                        children: [
+                          Expanded(
+                            child: note.title.isNotEmpty
+                                ? Text(
+                                    note.title,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
+                          if (note.allEmojis.isNotEmpty)
+                            Wrap(
+                              spacing: 4,
+                              children: note.allEmojis
+                                  .map<Widget>((emoji) => Text(emoji, style: const TextStyle(fontSize: 20)))
+                                  .toList(),
+                            ),
+                        ],
+                      ),
+                      if (note.title.isNotEmpty) const SizedBox(height: 8),
                       // 전체 내용 표시
                       if (note.content.isNotEmpty) ...[
                         Text(
