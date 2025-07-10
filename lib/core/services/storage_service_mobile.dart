@@ -54,7 +54,7 @@ class StorageService {
       final jsonString = jsonEncode({
         'entries': entries.map((e) => e.toJson()).toList(),
       });
-      await file.writeAsString(jsonString);
+      await file.writeAsString(jsonString, encoding: utf8);
     } catch (e) {
       throw Exception('Failed to save entries: $e');
     }
@@ -93,7 +93,7 @@ class StorageService {
       final file = File('${directory.path}/$_entriesFileName');
       
       if (await file.exists()) {
-        final jsonString = await file.readAsString();
+        final jsonString = await file.readAsString(encoding: utf8);
         final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
         final entriesData = jsonData['entries'] as List;
         
@@ -213,7 +213,7 @@ class StorageService {
       final directory = await _appDirectory;
       final file = File('${directory.path}/$_settingsFileName');
       final jsonString = jsonEncode(settings.toJson());
-      await file.writeAsString(jsonString);
+      await file.writeAsString(jsonString, encoding: utf8);
     } catch (e) {
       throw Exception('Failed to save app settings: $e');
     }
@@ -226,7 +226,7 @@ class StorageService {
       final file = File('${directory.path}/$_settingsFileName');
       
       if (await file.exists()) {
-        final jsonString = await file.readAsString();
+        final jsonString = await file.readAsString(encoding: utf8);
         final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
         return AppSettings.fromJson(jsonData);
       }

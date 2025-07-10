@@ -7,6 +7,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:typed_data';
 import 'dart:io';
+import 'dart:convert';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
@@ -319,7 +320,7 @@ class SettingsScreen extends StatelessWidget {
 
       if (directory != null) {
         final file = File('${directory.path}/$fileName');
-        await file.writeAsString(backupData);
+        await file.writeAsString(backupData, encoding: utf8);
 
         if (context.mounted) {
           showDialog(
@@ -382,7 +383,7 @@ class SettingsScreen extends StatelessWidget {
       // 임시 파일 생성
       final tempDir = await getTemporaryDirectory();
       final tempFile = File('${tempDir.path}/$fileName');
-      await tempFile.writeAsString(backupData);
+      await tempFile.writeAsString(backupData, encoding: utf8);
 
       // 파일 공유
       await Share.shareXFiles(
@@ -479,7 +480,7 @@ class SettingsScreen extends StatelessWidget {
 
       if (saveLocation != null) {
         final file = File(saveLocation.path);
-        await file.writeAsString(backupData);
+        await file.writeAsString(backupData, encoding: utf8);
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -642,7 +643,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   onTap: () async {
                     Navigator.pop(ctx);
-                    final content = await file.readAsString();
+                    final content = await file.readAsString(encoding: utf8);
                     await _processImport(context, content);
                   },
                 );
