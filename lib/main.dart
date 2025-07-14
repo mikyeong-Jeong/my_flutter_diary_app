@@ -7,6 +7,7 @@ import 'core/providers/diary_provider.dart';
 import 'core/providers/theme_provider.dart';
 // import 'core/services/widget_service.dart';
 import 'core/services/import_service.dart';
+import 'core/services/calendar_service.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 import 'features/write/presentation/screens/write_screen.dart';
 import 'features/search/presentation/screens/search_screen.dart';
@@ -21,6 +22,9 @@ void main() async {
 
   // Locale 데이터 초기화
   await initializeDateFormatting('ko_KR', null);
+
+  // 캘린더 서비스 초기화 (공휴일 정보 로드)
+  await CalendarService.instance.initialize();
 
   // 위젯 초기화 - 임시로 비활성화
   // final widgetService = WidgetService();

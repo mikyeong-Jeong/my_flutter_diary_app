@@ -12,6 +12,8 @@ import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
 import '../../../../core/utils/download_helper.dart';
+import '../../../../core/services/calendar_service.dart';
+import '../../../../core/utils/json_utils.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -47,6 +49,42 @@ class SettingsScreen extends StatelessWidget {
                       },
                     ),
                   );
+                },
+              ),
+            ],
+          ),
+          
+          // 캘린더 설정
+          _buildSection(
+            title: '캘린더',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.calendar_today),
+                title: const Text('공휴일 표시'),
+                subtitle: const Text('기기의 캘린더에서 공휴일 정보를 가져옵니다'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () async {
+                    final calendarService = CalendarService.instance;
+                    await calendarService.refresh();
+                    
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('공휴일 정보를 새로고침했습니다'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: const Text('공휴일 정보'),
+                subtitle: const Text('탭하여 자세히 보기'),
+                onTap: () {
+                  _showHolidayInfo(context);
                 },
               ),
             ],
@@ -320,7 +358,10 @@ class SettingsScreen extends StatelessWidget {
 
       if (directory != null) {
         final file = File('${directory.path}/$fileName');
-        await file.writeAsString(backupData, encoding: utf8);
+        
+        // UTF-8 바이트로 변환 (BOM 포함)
+        final bytes = JsonUtils.toUtf8Bytes(backupData, includeBom: true);
+        await file.writeAsBytes(bytes);
 
         if (context.mounted) {
           showDialog(
@@ -383,7 +424,10 @@ class SettingsScreen extends StatelessWidget {
       // 임시 파일 생성
       final tempDir = await getTemporaryDirectory();
       final tempFile = File('${tempDir.path}/$fileName');
-      await tempFile.writeAsString(backupData, encoding: utf8);
+      
+      // UTF-8 바이트로 변환 (BOM 포함)
+      final bytes = JsonUtils.toUtf8Bytes(backupData, includeBom: true);
+      await tempFile.writeAsBytes(bytes);
 
       // 파일 공유
       await Share.shareXFiles(
@@ -480,7 +524,10 @@ class SettingsScreen extends StatelessWidget {
 
       if (saveLocation != null) {
         final file = File(saveLocation.path);
-        await file.writeAsString(backupData, encoding: utf8);
+        
+        // UTF-8 바이트로 변환 (BOM 포함)
+        final bytes = JsonUtils.toUtf8Bytes(backupData, includeBom: true);
+        await file.writeAsBytes(bytes);
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -643,7 +690,11 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   onTap: () async {
                     Navigator.pop(ctx);
-                    final content = await file.readAsString(encoding: utf8);
+                    // 바이트로 읽어서 안전하게 디코딩
+                    final bytes = await file.readAsBytes();
+                    final jsonData = JsonUtils.decodeFromBytes(bytes);
+                    final content = jsonEncode(jsonData); // 정규화된 JSON 문자열
+                    
                     await _processImport(context, content);
                   },
                 );
@@ -680,7 +731,11 @@ class SettingsScreen extends StatelessWidget {
       final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
       
       if (file != null) {
-        final String content = await file.readAsString();
+        // 바이트로 읽어서 안전하게 디코딩
+        final bytes = await file.readAsBytes();
+        final jsonData = JsonUtils.decodeFromBytes(bytes);
+        final content = jsonEncode(jsonData); // 정규화된 JSON 문자열
+        
         await _processImport(context, content);
       }
     } catch (e) {
@@ -748,50 +803,69 @@ class SettingsScreen extends StatelessWidget {
   
   Future<void> _processImport(BuildContext context, String content) async {
     if (context.mounted) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('백업 복원'),
-          content: const Text(
-            '백업을 복원하시겠습니까?\n'
-            '현재 모든 데이터가 백업 파일의 데이터로 교체됩니다.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('취소'),
+      // JSON 유효성 검사
+      try {
+        // 잘못된 인코딩으로 인한 문제 방지
+        final cleanContent = content.trim();
+        
+        // JSON 파싱 테스트
+        final testParse = jsonDecode(cleanContent);
+        if (testParse is! Map<String, dynamic>) {
+          throw const FormatException('Invalid backup format');
+        }
+        
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('백업 복원'),
+            content: const Text(
+              '백업을 복원하시겠습니까?\n'
+              '현재 모든 데이터가 백업 파일의 데이터로 교체됩니다.',
             ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(ctx);
-                
-                try {
-                  await context.read<DiaryProvider>().importBackup(content);
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('취소'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
                   
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('백업이 성공적으로 복원되었습니다'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
+                  try {
+                    await context.read<DiaryProvider>().importBackup(cleanContent);
+                    
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('백업이 성공적으로 복원되었습니다'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('복원 실패: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('복원 실패: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('복원'),
-            ),
-          ],
-        ),
-      );
+                },
+                child: const Text('복원'),
+              ),
+            ],
+          ),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('백업 파일 형식이 올바르지 않습니다: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
   
@@ -849,6 +923,91 @@ class SettingsScreen extends StatelessWidget {
               foregroundColor: Colors.red,
             ),
             child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _showHolidayInfo(BuildContext context) {
+    final calendarService = CalendarService.instance;
+    final holidays = calendarService.holidays;
+    final now = DateTime.now();
+    
+    // 현재 연도의 공휴일만 필터링
+    final currentYearHolidays = holidays
+        .where((date) => date.year == now.year)
+        .toList()
+      ..sort();
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('${now.year}년 공휴일'),
+        content: Container(
+          width: double.maxFinite,
+          constraints: const BoxConstraints(maxHeight: 400),
+          child: currentYearHolidays.isEmpty
+              ? const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.info_outline, size: 48, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text('공휴일 정보를 가져올 수 없습니다.'),
+                    SizedBox(height: 8),
+                    Text(
+                      '기기의 캘린더에 "대한민국의 휴일" 캘린더가\n'
+                      '추가되어 있는지 확인해주세요.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                )
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: currentYearHolidays.length,
+                  itemBuilder: (context, index) {
+                    final holiday = currentYearHolidays[index];
+                    final isPast = holiday.isBefore(now);
+                    return ListTile(
+                      dense: true,
+                      leading: Icon(
+                        Icons.event,
+                        color: isPast ? Colors.grey : Colors.red,
+                        size: 20,
+                      ),
+                      title: Text(
+                        DateFormat('M월 d일 (E)', 'ko_KR').format(holiday),
+                        style: TextStyle(
+                          color: isPast ? Colors.grey : null,
+                          decoration: isPast ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          if (currentYearHolidays.isEmpty)
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                // 캘린더 앱 열기 시도
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      '기기의 캘린더 설정에서\n'
+                      '"대한민국의 휴일" 캘린더를 추가해주세요',
+                    ),
+                    duration: Duration(seconds: 4),
+                  ),
+                );
+              },
+              child: const Text('캘린더 설정'),
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('닫기'),
           ),
         ],
       ),

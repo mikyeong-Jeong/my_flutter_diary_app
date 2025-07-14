@@ -4,6 +4,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
+import '../../../../core/services/calendar_service.dart';
 
 class CalendarTab extends StatefulWidget {
   const CalendarTab({super.key});
@@ -16,27 +17,7 @@ class _CalendarTabState extends State<CalendarTab> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
-
-  // 대한민국 공휴일 목록 (고정 날짜만 - 실제 앱에서는 device_calendar 패키지나 API를 통해 가져올 수 있습니다)
-  bool _isHoliday(DateTime day) {
-    // 고정 공휴일 체크
-    final holidays = [
-      DateTime(day.year, 1, 1),   // 신정
-      DateTime(day.year, 3, 1),   // 삼일절
-      DateTime(day.year, 5, 5),   // 어린이날
-      DateTime(day.year, 6, 6),   // 현충일
-      DateTime(day.year, 8, 15),  // 광복절
-      DateTime(day.year, 10, 3),  // 개천절
-      DateTime(day.year, 10, 9),  // 한글날
-      DateTime(day.year, 12, 25), // 성탄절
-    ];
-    
-    return holidays.any((holiday) => 
-      holiday.year == day.year && 
-      holiday.month == day.month && 
-      holiday.day == day.day
-    );
-  }
+  final CalendarService _calendarService = CalendarService.instance;
 
   @override
   void initState() {
@@ -44,7 +25,21 @@ class _CalendarTabState extends State<CalendarTab> {
     _selectedDay = DateTime.now();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DiaryProvider>().setSelectedDate(_selectedDay!);
+      // 캘린더 서비스 초기화
+      _initializeCalendarService();
     });
+  }
+
+  Future<void> _initializeCalendarService() async {
+    await _calendarService.initialize();
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  // OS의 캘린더 또는 고정 공휴일 확인
+  bool _isHoliday(DateTime day) {
+    return _calendarService.isHoliday(day);
   }
 
   List<DiaryEntry> _getEntriesForDay(DateTime day, List<DiaryEntry> allEntries) {

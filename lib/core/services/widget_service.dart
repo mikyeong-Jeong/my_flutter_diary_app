@@ -1,4 +1,5 @@
-import 'package:home_widget/home_widget.dart';
+// 임시로 home_widget 패키지 관련 기능 비활성화
+// import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
 import '../models/diary_entry.dart';
 import 'storage_service.dart';
@@ -9,8 +10,12 @@ class WidgetService {
   
   final StorageService _storageService = StorageService.instance;
 
-  // 위젯 데이터 업데이트
+  // 위젯 데이터 업데이트 - 임시 비활성화
   Future<void> updateWidget() async {
+    // home_widget 패키지가 없으므로 임시로 비활성화
+    return;
+    
+    /* 원본 코드 백업
     try {
       // 오늘 날짜
       final today = DateTime.now();
@@ -63,6 +68,7 @@ class WidgetService {
     } catch (e) {
       // 위젯 업데이트 실패 시 조용히 무시
     }
+    */
   }
 
   // 최근 일기 가져오기
@@ -84,14 +90,23 @@ class WidgetService {
     }
   }
 
-  // 위젯 초기화
+  // 위젯 초기화 - 임시 비활성화
   Future<void> initializeWidget() async {
+    // home_widget 패키지가 없으므로 임시로 비활성화
+    return;
+    
+    /* 원본 코드 백업
     await HomeWidget.setAppGroupId('com.example.diary_app');
     await HomeWidget.registerInteractivityCallback(backgroundCallback);
+    */
   }
 
   // 백그라운드 콜백 (위젯 클릭 처리)
   static Future<void> backgroundCallback(Uri? uri) async {
+    // home_widget 패키지가 없으므로 임시로 비활성화
+    return;
+    
+    /* 원본 코드 백업
     if (uri != null) {
       // 위젯에서 앱 열기 처리
       if (uri.host == 'openapp') {
@@ -99,5 +114,6 @@ class WidgetService {
         // 앱이 종료된 상태면 main.dart에서 처리
       }
     }
+    */
   }
 }

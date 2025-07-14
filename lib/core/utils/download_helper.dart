@@ -1,2 +1,1 @@
-export 'download_helper_stub.dart'
-    if (dart.library.html) 'web_download_helper.dart';
+export 'download_helper_stub.dart' if (dart.library.html) 'web_download_helper.dart';

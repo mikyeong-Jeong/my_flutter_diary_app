@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
+import '../../../../core/utils/text_utils.dart';
 
 class WriteScreen extends StatefulWidget {
   const WriteScreen({super.key});
@@ -132,9 +133,16 @@ class _WriteScreenState extends State<WriteScreen> {
     final newDate = _entry.type == EntryType.dated ? _formatDate(_selectedDate) : _entry.date;
     print('Debug: newDate = $newDate');
 
+    // 텍스트 정리 (유효하지 않은 문자 제거)
+    final cleanTitle = TextUtils.sanitizeText(_titleController.text.trim());
+    final cleanContent = TextUtils.sanitizeText(_contentController.text.trim());
+    
+    print('Debug: Original content: ${_contentController.text}');
+    print('Debug: Cleaned content: $cleanContent');
+    
     final updatedEntry = _entry.copyWith(
-      title: _titleController.text.trim(),
-      content: _contentController.text.trim(),
+      title: cleanTitle,
+      content: cleanContent,
       date: newDate,
       moods: _selectedMoods,
       customEmojis: _selectedCustomEmojis,

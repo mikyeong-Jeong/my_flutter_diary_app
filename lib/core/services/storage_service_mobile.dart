@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import '../models/diary_entry.dart';
 import '../models/app_settings.dart';
+import '../utils/json_utils.dart';
 
 class StorageService {
   static final StorageService _instance = StorageService._internal();
@@ -51,9 +52,22 @@ class StorageService {
     try {
       final directory = await _appDirectory;
       final file = File('${directory.path}/$_entriesFileName');
-      final jsonString = jsonEncode({
+      
+      // 디버깅: 저장 전 데이터 확인
+      for (var entry in entries) {
+        print('Saving entry - Title: ${entry.title}, Content: ${entry.content.substring(0, entry.content.length > 50 ? 50 : entry.content.length)}...');
+      }
+      
+      final jsonData = {
         'entries': entries.map((e) => e.toJson()).toList(),
-      });
+      };
+      
+      // JSON 문자열 생성
+      final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
+      
+      // 디버깅: JSON 문자열 확인
+      print('JSON to save (first 500 chars): ${jsonString.substring(0, jsonString.length > 500 ? 500 : jsonString.length)}');
+      
       await file.writeAsString(jsonString, encoding: utf8);
     } catch (e) {
       throw Exception('Failed to save entries: $e');
@@ -252,7 +266,19 @@ class StorageService {
         'version': '2.0', // 새 버전
       };
       
-      return jsonEncode(backupData);
+      // UTF-8 인코딩을 보장하기 위해 먼저 일반 JSON으로 변환 후
+      // UTF-8 바이트로 변환했다가 다시 문자열로 변환
+      final jsonString = json.encode(backupData);
+      final utf8Bytes = utf8.encode(jsonString);
+      final utf8String = utf8.decode(utf8Bytes);
+      
+      // Pretty print를 위한 재포맷팅
+      final prettyJson = const JsonEncoder.withIndent('  ').convert(json.decode(utf8String));
+      
+      // 디버깅: 생성된 JSON 확인
+      print('Export backup JSON (first 500 chars): ${prettyJson.substring(0, prettyJson.length > 500 ? 500 : prettyJson.length)}');
+      
+      return prettyJson;
     } catch (e) {
       throw Exception('Failed to export backup: $e');
     }
