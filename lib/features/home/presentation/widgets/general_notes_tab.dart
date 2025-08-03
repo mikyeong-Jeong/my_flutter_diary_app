@@ -1,11 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/providers/diary_provider.dart';
-import '../../../../core/models/diary_entry.dart';
 
-class GeneralNotesTab extends StatelessWidget {
-  const GeneralNotesTab({super.key});
+/// 일반 메모 탭 위젯
+/// 
+/// 날짜와 무관한 일반 메모들을 보여주는 탭입니다.
+/// 특정 메모 ID로 스크롤 및 선택 기능을 지원합니다.
+class GeneralNotesTab extends StatefulWidget {
+  final String? targetMemoId; // 특정 메모로 스크롤할 ID
+  
+  const GeneralNotesTab({super.key, this.targetMemoId});
 
+  @override
+  State<GeneralNotesTab> createState() => _GeneralNotesTabState();
+}
+
+class _GeneralNotesTabState extends State<GeneralNotesTab> {
+  final ScrollController _scrollController = ScrollController();
+  String? _selectedMemoId; // 현재 선택된 메모 ID
+  
+  @override
+  void initState() {
+    super.initState();
+    // 특정 메모가 지정되었다면 해당 메모로 스크롤
+    if (widget.targetMemoId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToMemo(widget.targetMemoId!);
+      });
+    }
+  }
+  
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+  
+  /// 특정 메모로 스크롤하고 하이라이트
+  void _scrollToMemo(String memoId) {
+    final diaryProvider = context.read<DiaryProvider>();
+    final notes = diaryProvider.generalNotes;
+    
+    // 메모 인덱스 찾기
+    final index = notes.indexWhere((note) => note.id == memoId);
+    if (index != -1) {
+      setState(() {
+        _selectedMemoId = memoId;
+      });
+      
+      // 스크롤 위치 계산 (각 카드의 높이를 고려)
+      // 약간의 지연 후 스크롤하여 렌더링 완료 확보
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (_scrollController.hasClients) {
+          final position = index * 150.0; // 대략적인 카드 높이
+          _scrollController.animateTo(
+            position,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+      
+      // 3초 후 하이라이트 제거
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            _selectedMemoId = null;
+          });
+        }
+      });
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Consumer<DiaryProvider>(
@@ -44,19 +110,39 @@ class GeneralNotesTab extends StatelessWidget {
         }
 
         return ListView.builder(
+          controller: _scrollController,
           padding: const EdgeInsets.all(16.0),
           itemCount: notes.length,
           itemBuilder: (context, index) {
             final note = notes[index];
-            return Card(
+            final isSelected = note.id == _selectedMemoId;
+            
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
               margin: const EdgeInsets.only(bottom: 12.0),
-              child: InkWell(
-                onTap: () {
-                  Navigator.pushNamed(context, '/write', arguments: note);
-                },
+              decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                border: Border.all(
+                  color: isSelected ? Theme.of(context).primaryColor : Colors.transparent,
+                  width: isSelected ? 2 : 0,
+                ),
+                boxShadow: isSelected ? [
+                  BoxShadow(
+                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                  ),
+                ] : null,
+              ),
+              child: Card(
+                margin: EdgeInsets.zero,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.pushNamed(context, '/read', arguments: note);
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -74,13 +160,6 @@ class GeneralNotesTab extends StatelessWidget {
                                   )
                                 : const SizedBox.shrink(),
                           ),
-                          if (note.allEmojis.isNotEmpty)
-                            Wrap(
-                              spacing: 4,
-                              children: note.allEmojis
-                                  .map<Widget>((emoji) => Text(emoji, style: const TextStyle(fontSize: 20)))
-                                  .toList(),
-                            ),
                         ],
                       ),
                       if (note.title.isNotEmpty) const SizedBox(height: 8),
@@ -89,21 +168,6 @@ class GeneralNotesTab extends StatelessWidget {
                         Text(
                           note.content,
                           style: const TextStyle(fontSize: 14),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      // 태그
-                      if (note.tags.isNotEmpty) ...[
-                        Wrap(
-                          spacing: 4,
-                          runSpacing: 4,
-                          children: note.tags
-                              .map<Widget>((tag) => Chip(
-                                    label: Text(tag, style: const TextStyle(fontSize: 12)),
-                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    visualDensity: VisualDensity.compact,
-                                  ))
-                              .toList(),
                         ),
                         const SizedBox(height: 8),
                       ],
@@ -129,6 +193,7 @@ class GeneralNotesTab extends StatelessWidget {
                         ],
                       ),
                     ],
+                  ),
                   ),
                 ),
               ),

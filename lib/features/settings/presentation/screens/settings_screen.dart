@@ -5,15 +5,15 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:typed_data';
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
 import '../../../../core/utils/download_helper.dart';
-import '../../../../core/services/calendar_service.dart';
 import '../../../../core/utils/json_utils.dart';
+import '../../../../core/services/widget_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -54,41 +54,7 @@ class SettingsScreen extends StatelessWidget {
             ],
           ),
           
-          // 캘린더 설정
-          _buildSection(
-            title: '캘린더',
-            children: [
-              ListTile(
-                leading: const Icon(Icons.calendar_today),
-                title: const Text('공휴일 표시'),
-                subtitle: const Text('기기의 캘린더에서 공휴일 정보를 가져옵니다'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () async {
-                    final calendarService = CalendarService.instance;
-                    await calendarService.refresh();
-                    
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('공휴일 정보를 새로고침했습니다'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.info_outline),
-                title: const Text('공휴일 정보'),
-                subtitle: const Text('탭하여 자세히 보기'),
-                onTap: () {
-                  _showHolidayInfo(context);
-                },
-              ),
-            ],
-          ),
+          
           
           // 데이터 관리
           _buildSection(
@@ -174,6 +140,19 @@ class SettingsScreen extends StatelessWidget {
             ],
           ),
           
+          // 위젯 설정
+          _buildSection(
+            title: '위젯 설정',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.widgets),
+                title: const Text('위젯 정보'),
+                subtitle: const Text('홈 화면 위젯 사용 안내'),
+                onTap: () => _showWidgetInfo(context),
+              ),
+            ],
+          ),
+          
           // 앱 정보
           _buildSection(
             title: '앱 정보',
@@ -222,6 +201,239 @@ class SettingsScreen extends StatelessWidget {
         ...children,
         const Divider(),
       ],
+    );
+  }
+
+  // 위젯 정보 다이얼로그
+  void _showWidgetInfo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('홈 화면 위젯 정보'),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('이 앱은 3가지 종류의 홈 화면 위젯을 제공합니다:\n'),
+              Text('1. 일기 위젯', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('   - 최근 작성한 일기 3개를 목록으로 표시\n'),
+              Text('2. 메모 위젯', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('   - 최근 작성한 메모 3개를 목록으로 표시\n'),
+              Text('3. 단일 메모 위젯', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('   - 선택한 특정 메모 하나를 전체 표시'),
+              Text('   - 위젯 추가 시 표시할 메모를 선택 가능\n'),
+              Text('위젯 추가 방법:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('1. 홈 화면 길게 누르기'),
+              Text('2. 위젯 추가 메뉴 선택'),
+              Text('3. "나의 다이어리" 앱 찾기'),
+              Text('4. 원하는 위젯 선택 및 추가'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 메모 위젯 설정 다이얼로그 (더 이상 사용되지 않음)
+  void _showMemoWidgetConfig(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('메모 위젯 설정'),
+        content: const SizedBox(
+          width: double.maxFinite,
+          child: Text('위젯에 표시할 메모를 선택하세요.\n\n'
+              '현재는 수동으로 위젯 ID를 입력하여 설정해야 합니다.\n'
+              '향후 버전에서 더 편리한 UI를 제공할 예정입니다.'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showMemoSelectionDialog(context);
+            },
+            child: const Text('메모 선택'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 메모 선택 다이얼로그
+  void _showMemoSelectionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Consumer<DiaryProvider>(
+        builder: (context, provider, child) {
+          final allEntries = provider.generalNotes.toList();
+          
+          return AlertDialog(
+            title: const Text('메모 선택'),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 400,
+              child: allEntries.isEmpty
+                  ? const Center(child: Text('표시할 메모가 없습니다.'))
+                  : ListView.builder(
+                      itemCount: allEntries.length,
+                      itemBuilder: (context, index) {
+                        final entry = allEntries[index];
+                        final date = entry.date != null
+                            ? DateFormat('yyyy-MM-dd').format(DateTime.parse(entry.date!))
+                            : DateFormat('yyyy-MM-dd').format(entry.updatedAt);
+                        
+                        return ListTile(
+                          title: Text(
+                            entry.title.isEmpty ? '제목 없음' : entry.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: entry.type == EntryType.dated 
+                                          ? Colors.blue.withOpacity(0.1)
+                                          : Colors.green.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(
+                                        color: entry.type == EntryType.dated 
+                                            ? Colors.blue.withOpacity(0.3)
+                                            : Colors.green.withOpacity(0.3),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      entry.type == EntryType.dated ? '날짜별' : '일반',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: entry.type == EntryType.dated 
+                                            ? Colors.blue[700]
+                                            : Colors.green[700],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: Text(date)),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                entry.content,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                          trailing: entry.type == EntryType.dated 
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (entry.moods.isNotEmpty)
+                                      Text(entry.moods.join(' ')),
+                                    if (entry.customEmojis.isNotEmpty)
+                                      Text(entry.customEmojis.join(' ')),
+                                  ],
+                                )
+                              : null,
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            _showWidgetIdDialog(context, entry);
+                          },
+                        );
+                      },
+                    ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('취소'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  // 위젯 ID 입력 다이얼로그
+  void _showWidgetIdDialog(BuildContext context, DiaryEntry entry) {
+    final controller = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('위젯 ID 입력'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('선택한 메모: ${entry.title.isEmpty ? "제목 없음" : entry.title}'),
+            const SizedBox(height: 16),
+            const Text('위젯 ID를 입력하세요 (예: 1, 2, 3...)'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                hintText: '위젯 ID',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final widgetIdText = controller.text.trim();
+              if (widgetIdText.isNotEmpty) {
+                final widgetId = int.tryParse(widgetIdText);
+                if (widgetId != null) {
+                  // 이 기능은 더 이상 사용되지 않습니다.
+                  // 단일 메모 위젯은 자체 설정 화면이 있습니다.
+                  // final widgetService = WidgetService();
+                  // await widgetService.setMemoForWidget(widgetId, entry.id);
+                  
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('이 기능은 더 이상 사용되지 않습니다.\n홈 화면에서 단일 메모 위젯을 추가하여 메모를 선택하세요.'),
+                      ),
+                    );
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('올바른 숫자를 입력하세요.'),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('설정'),
+          ),
+        ],
+      ),
     );
   }
   
@@ -313,6 +525,21 @@ class SettingsScreen extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              // 클립보드에 복사
+              await Clipboard.setData(ClipboardData(text: backupData));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('백업 데이터가 클립보드에 복사되었습니다\n메신저나 메모 앱에 붙여넣기 할 수 있습니다'),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            },
+            child: const Text('클립보드 복사'),
           ),
           TextButton(
             onPressed: () async {
@@ -767,14 +994,91 @@ class SettingsScreen extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () async {
                   Navigator.pop(ctx);
-                  // 클립보드 데이터 읽기는 플랫폼별로 구현 필요
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('클립보드 기능은 추후 업데이트 예정입니다\n파일 선택을 이용해주세요'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                  await _selectFileForRestore(context);
+                  // 클립보드에서 데이터 읽기
+                  try {
+                    final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+                    if (clipboardData != null && clipboardData.text != null) {
+                      final backupData = clipboardData.text!;
+                      
+                      // 백업 데이터 유효성 검사
+                      try {
+                        final decoded = JsonUtils.tryDecode(backupData);
+                        if (decoded == null) {
+                          throw const FormatException('잘못된 백업 파일 형식입니다.');
+                        }
+                        
+                        final hasEntries = decoded.containsKey('entries');
+                        final hasSettings = decoded.containsKey('settings');
+                        
+                        if (!hasEntries || !hasSettings) {
+                          throw const FormatException('잘못된 백업 파일 형식입니다.');
+                        }
+                        
+                        // 백업 가져오기 확인 다이얼로그
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('백업 복원'),
+                            content: const Text('클립보드의 백업 데이터로 복원하시겠습니까?\n\n현재 데이터는 모두 삭제됩니다.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('취소'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('복원'),
+                              ),
+                            ],
+                          ),
+                        );
+                        
+                        if (confirmed == true) {
+                          // 프로그레스 표시
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (ctx) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                          
+                          await context.read<DiaryProvider>().importBackup(backupData);
+                          await context.read<ThemeProvider>().importBackup(backupData);
+                          
+                          Navigator.pop(context); // 프로그레스 닫기
+                          
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('백업이 성공적으로 복원되었습니다'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('복원 실패: ${e.toString()}'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('클립보드가 비어있습니다'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('클립보드 읽기 실패: ${e.toString()}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 },
                 icon: const Icon(Icons.content_paste),
                 label: const Text('클립보드에서 가져오기'),
@@ -811,7 +1115,7 @@ class SettingsScreen extends StatelessWidget {
         // JSON 파싱 테스트
         final testParse = jsonDecode(cleanContent);
         if (testParse is! Map<String, dynamic>) {
-          throw const FormatException('Invalid backup format');
+          throw const FormatException('잘못된 백업 파일 형식입니다.');
         }
         
         showDialog(
@@ -929,88 +1233,5 @@ class SettingsScreen extends StatelessWidget {
     );
   }
   
-  void _showHolidayInfo(BuildContext context) {
-    final calendarService = CalendarService.instance;
-    final holidays = calendarService.holidays;
-    final now = DateTime.now();
-    
-    // 현재 연도의 공휴일만 필터링
-    final currentYearHolidays = holidays
-        .where((date) => date.year == now.year)
-        .toList()
-      ..sort();
-    
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('${now.year}년 공휴일'),
-        content: Container(
-          width: double.maxFinite,
-          constraints: const BoxConstraints(maxHeight: 400),
-          child: currentYearHolidays.isEmpty
-              ? const Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.info_outline, size: 48, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text('공휴일 정보를 가져올 수 없습니다.'),
-                    SizedBox(height: 8),
-                    Text(
-                      '기기의 캘린더에 "대한민국의 휴일" 캘린더가\n'
-                      '추가되어 있는지 확인해주세요.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                )
-              : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: currentYearHolidays.length,
-                  itemBuilder: (context, index) {
-                    final holiday = currentYearHolidays[index];
-                    final isPast = holiday.isBefore(now);
-                    return ListTile(
-                      dense: true,
-                      leading: Icon(
-                        Icons.event,
-                        color: isPast ? Colors.grey : Colors.red,
-                        size: 20,
-                      ),
-                      title: Text(
-                        DateFormat('M월 d일 (E)', 'ko_KR').format(holiday),
-                        style: TextStyle(
-                          color: isPast ? Colors.grey : null,
-                          decoration: isPast ? TextDecoration.lineThrough : null,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-        ),
-        actions: [
-          if (currentYearHolidays.isEmpty)
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(ctx);
-                // 캘린더 앱 열기 시도
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      '기기의 캘린더 설정에서\n'
-                      '"대한민국의 휴일" 캘린더를 추가해주세요',
-                    ),
-                    duration: Duration(seconds: 4),
-                  ),
-                );
-              },
-              child: const Text('캘린더 설정'),
-            ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('닫기'),
-          ),
-        ],
-      ),
-    );
-  }
+  
 }

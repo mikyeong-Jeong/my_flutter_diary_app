@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="200dp"
+    android:layout_height="200dp"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="16dp">
+    
+    <!-- 헤더 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="메모"
+            android:textSize="18sp"
+            android:textColor="#212121"
+            android:fontFamily="sans-serif-medium"/>
+        
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/ic_settings"
+            android:contentDescription="설정"/>
+    </LinearLayout>
+    
+    <!-- 날짜 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="2024년 1월 1일"
+        android:textSize="12sp"
+        android:textColor="#757575"
+        android:layout_marginBottom="8dp"/>
+    
+    <!-- 제목 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="메모 제목 예시"
+        android:textSize="16sp"
+        android:textColor="#212121"
+        android:fontFamily="sans-serif-medium"
+        android:layout_marginBottom="8dp"/>
+    
+    <!-- 내용 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:text="선택한 메모의 내용이 여기에 표시됩니다. 위젯을 추가할 때 표시할 메모를 선택할 수 있습니다."
+        android:textSize="13sp"
+        android:textColor="#424242"
+        android:lineSpacingExtra="3dp"/>
+
+</LinearLayout>

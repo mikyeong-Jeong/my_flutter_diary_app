@@ -32,11 +32,17 @@ dependencies:
   share_plus: ^7.2.2
   permission_handler: ^12.0.1
   
-  # Calendar integration - 임시 비활성화
+  # Calendar integration - 필요 시 활성화 가능
   # device_calendar: ^4.3.1
   
   # Icons
   cupertino_icons: ^1.0.6
+  
+  # Home Screen Widget
+  home_widget: ^0.7.0
+  
+  # SharedPreferences (위젯 데이터 공유용)
+  shared_preferences: ^2.2.3
 
 dev_dependencies:
   flutter_test:

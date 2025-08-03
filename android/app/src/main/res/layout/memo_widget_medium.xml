@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="12dp">
+    
+    <!-- 헤더 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="메모"
+            android:textSize="16sp"
+            android:textColor="#212121"
+            android:fontFamily="sans-serif-medium"/>
+        
+        <!-- 추가 버튼 -->
+        <ImageButton
+            android:id="@+id/add_memo_button"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/widget_button_background"
+            android:src="@drawable/ic_add"
+            android:contentDescription="메모 추가"/>
+    </LinearLayout>
+    
+    <!-- 메모 리스트 컨테이너 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+        
+        <!-- 첫 번째 메모 -->
+        <LinearLayout
+            android:id="@+id/memo_0_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/widget_entry_background"
+            android:padding="8dp"
+            android:layout_marginBottom="6dp"
+            android:visibility="gone">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                
+                <TextView
+                    android:id="@+id/memo_0_title"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="메모 제목"
+                    android:textSize="14sp"
+                    android:textColor="#212121"
+                    android:fontFamily="sans-serif-medium"
+                    android:maxLines="1"
+                    android:ellipsize="end"/>
+                
+                <TextView
+                    android:id="@+id/memo_0_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1/1"
+                    android:textSize="11sp"
+                    android:textColor="#757575"/>
+            </LinearLayout>
+            
+            <TextView
+                android:id="@+id/memo_0_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="메모 내용"
+                android:textSize="12sp"
+                android:textColor="#424242"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layout_marginTop="2dp"/>
+        </LinearLayout>
+        
+        <!-- 두 번째 메모 -->
+        <LinearLayout
+            android:id="@+id/memo_1_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/widget_entry_background"
+            android:padding="8dp"
+            android:visibility="gone">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                
+                <TextView
+                    android:id="@+id/memo_1_title"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="메모 제목"
+                    android:textSize="14sp"
+                    android:textColor="#212121"
+                    android:fontFamily="sans-serif-medium"
+                    android:maxLines="1"
+                    android:ellipsize="end"/>
+                
+                <TextView
+                    android:id="@+id/memo_1_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1/1"
+                    android:textSize="11sp"
+                    android:textColor="#757575"/>
+            </LinearLayout>
+            
+            <TextView
+                android:id="@+id/memo_1_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="메모 내용"
+                android:textSize="12sp"
+                android:textColor="#424242"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layout_marginTop="2dp"/>
+        </LinearLayout>
+        
+        <!-- 빈 메시지 -->
+        <LinearLayout
+            android:id="@+id/empty_message_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📝"
+                android:textSize="36sp"/>
+            
+            <TextView
+                android:id="@+id/empty_message"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="작성된 메모가 없습니다"
+                android:textSize="14sp"
+                android:textColor="#757575"
+                android:layout_marginTop="4dp"/>
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">나의 다이어리</string>
+    <string name="widget_description">최근 일기를 확인하고 새 일기를 작성할 수 있습니다.</string>
+    <string name="memo_widget_description">최근 메모 목록을 홈 화면에서 바로 확인할 수 있습니다.</string>
+    <string name="single_memo_widget_description">특정 메모를 선택하여 표시합니다.</string>
+    <string name="calendar_widget_description">월간 캘린더와 일기 표시</string>
+</resources>

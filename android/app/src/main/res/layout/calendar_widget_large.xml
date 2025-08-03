@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="16dp">
+    
+    <!-- 탭 버튼들 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+        
+        <Button
+            android:id="@+id/tab_calendar"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="36dp"
+            android:text="달력"
+            android:textSize="14sp"
+            android:textColor="@android:color/white"
+            android:background="@drawable/widget_button_background"
+            android:layout_marginEnd="4dp"/>
+        
+        <Button
+            android:id="@+id/tab_diary"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="36dp"
+            android:text="일기"
+            android:textSize="14sp"
+            android:textColor="#757575"
+            android:background="@drawable/widget_entry_background"
+            android:layout_marginEnd="4dp"/>
+        
+        <Button
+            android:id="@+id/tab_memo"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="36dp"
+            android:text="메모"
+            android:textSize="14sp"
+            android:textColor="#757575"
+            android:background="@drawable/widget_entry_background"
+            android:layout_marginEnd="4dp"/>
+        
+        <Button
+            android:id="@+id/tab_calculator"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="36dp"
+            android:text="계산기"
+            android:textSize="14sp"
+            android:textColor="#757575"
+            android:background="@drawable/widget_entry_background"/>
+    </LinearLayout>
+    
+    <!-- 헤더 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+        
+        <ImageButton
+            android:id="@+id/prev_month_button"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@drawable/widget_button_background"
+            android:src="@android:drawable/ic_media_previous"
+            android:contentDescription="이전 달"/>
+        
+        <TextView
+            android:id="@+id/month_title"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="2025년 1월"
+            android:textSize="20sp"
+            android:textColor="#212121"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"/>
+        
+        <ImageButton
+            android:id="@+id/next_month_button"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@drawable/widget_button_background"
+            android:src="@android:drawable/ic_media_next"
+            android:contentDescription="다음 달"/>
+    </LinearLayout>
+    
+    <!-- 요일 헤더 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="일"
+            android:textSize="14sp"
+            android:textColor="#F44336"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"/>
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="월"
+            android:textSize="14sp"
+            android:textColor="#757575"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"/>
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="화"
+            android:textSize="14sp"
+            android:textColor="#757575"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"/>
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="수"
+            android:textSize="14sp"
+            android:textColor="#757575"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"/>
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="목"
+            android:textSize="14sp"
+            android:textColor="#757575"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"/>
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="금"
+            android:textSize="14sp"
+            android:textColor="#757575"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"/>
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="토"
+            android:textSize="14sp"
+            android:textColor="#2196F3"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"/>
+    </LinearLayout>
+    
+    <!-- 캘린더 그리드 -->
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:columnCount="7"
+        android:rowCount="6">
+        
+        <!-- 42개의 날짜 셀 (6주 x 7일) -->
+        <!-- 각 셀은 동적으로 생성됩니다 -->
+        <TextView android:id="@+id/day_0" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_1" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_2" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_3" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_4" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_5" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_6" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_7" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_8" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_9" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_10" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_11" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_12" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_13" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_14" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_15" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_16" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_17" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_18" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_19" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_20" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_21" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_22" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_23" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_24" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_25" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_26" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_27" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_28" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_29" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_30" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_31" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_32" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_33" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_34" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_35" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_36" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_37" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_38" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_39" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_40" style="@style/CalendarDayStyle"/>
+        <TextView android:id="@+id/day_41" style="@style/CalendarDayStyle"/>
+    </GridLayout>
+    
+    <!-- 하단 버튼 -->
+    <Button
+        android:id="@+id/open_app_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="나의 다이어리 열기"
+        android:textColor="@android:color/white"
+        android:background="@drawable/widget_button_background"/>
+    
+</LinearLayout>

@@ -15,3 +15,5 @@ android/.gradle/
 *.swp
 *.bak
 *.DS_Store
+CLAUDE.md
+GEMINI.md

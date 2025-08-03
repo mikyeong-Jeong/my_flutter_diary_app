@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="12dp">
+    
+    <!-- 헤더 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="메모"
+            android:textSize="16sp"
+            android:textColor="#212121"
+            android:fontFamily="sans-serif-medium"/>
+        
+        <!-- 설정 버튼 -->
+        <ImageButton
+            android:id="@+id/settings_button"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/widget_button_background"
+            android:src="@drawable/ic_settings"
+            android:contentDescription="메모 설정"/>
+    </LinearLayout>
+    
+    <!-- 메모 컨테이너 -->
+    <LinearLayout
+        android:id="@+id/memo_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:visibility="gone">
+        
+        <!-- 날짜와 아이콘이 있는 서브헤더 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+            
+            <TextView
+                android:id="@+id/memo_date"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="2024년 1월 1일"
+                android:textSize="12sp"
+                android:textColor="#757575"/>
+                
+            <TextView
+                android:id="@+id/memo_icons"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="😊"
+                android:textSize="16sp"/>
+        </LinearLayout>
+        
+        <!-- 제목 -->
+        <TextView
+            android:id="@+id/memo_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="메모 제목"
+            android:textSize="16sp"
+            android:textColor="#212121"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:layout_marginBottom="8dp"/>
+        
+        <!-- 내용 -->
+        <TextView
+            android:id="@+id/memo_content"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:text="메모 내용이 여기에 표시됩니다..."
+            android:textSize="13sp"
+            android:textColor="#424242"
+            android:lineSpacingExtra="3dp"
+            android:ellipsize="end"/>
+    </LinearLayout>
+    
+    <!-- 빈 상태 컨테이너 -->
+    <LinearLayout
+        android:id="@+id/empty_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📝"
+            android:textSize="36sp"/>
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="메모 선택하기"
+            android:textSize="14sp"
+            android:textColor="#757575"
+            android:layout_marginTop="4dp"/>
+    </LinearLayout>
+
+</LinearLayout>

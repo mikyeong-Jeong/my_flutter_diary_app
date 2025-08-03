@@ -12,10 +12,10 @@ class StorageService {
   static const String _settingsKey = 'app_settings';
   
   Future<void> initialize() async {
-    // Initialize storage service
+    // 저장소 서비스 초기화
   }
 
-  // Save diary entry
+  // 일기 항목 저장
   Future<void> saveEntry(DiaryEntry entry) async {
     try {
       final entries = await loadAllEntries();
@@ -31,11 +31,11 @@ class StorageService {
       // LocalStorage에 저장
       _saveAllEntries(entries);
     } catch (e) {
-      throw Exception('Failed to save diary entry: $e');
+      throw Exception('일기 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
     }
   }
 
-  // Save all entries to localStorage
+  // 모든 항목을 localStorage에 저장
   void _saveAllEntries(List<DiaryEntry> entries) {
     try {
       final jsonString = jsonEncode({
@@ -43,37 +43,42 @@ class StorageService {
       });
       html.window.localStorage[_entriesKey] = jsonString;
     } catch (e) {
-      throw Exception('Failed to save entries: $e');
+      throw Exception('데이터 저장에 실패했습니다.');
     }
   }
 
-  // Load diary entry by ID
+  // ID로 일기 항목 로드
   Future<DiaryEntry?> loadDiaryEntryById(String id) async {
     try {
       final entries = await loadAllEntries();
       return entries.firstWhere(
         (e) => e.id == id,
-        orElse: () => throw Exception('Entry not found'),
+        orElse: () => throw Exception('해당 일기를 찾을 수 없습니다.'),
       );
     } catch (e) {
       return null;
     }
   }
 
-  // Load diary entry for specific date (날짜별 메모용)
+  // loadEntry 메서드 (loadDiaryEntryById의 별칭)
+  Future<DiaryEntry?> loadEntry(String id) async {
+    return loadDiaryEntryById(id);
+  }
+
+  // 특정 날짜의 일기 항목 로드 (날짜별 메모용)
   Future<DiaryEntry?> loadDiaryEntry(String date) async {
     try {
       final entries = await loadAllEntries();
       return entries.firstWhere(
         (e) => e.type == EntryType.dated && e.date == date,
-        orElse: () => throw Exception('Entry not found'),
+        orElse: () => throw Exception('해당 일기를 찾을 수 없습니다.'),
       );
     } catch (e) {
       return null;
     }
   }
 
-  // Load all diary entries
+  // 모든 일기 항목 로드
   Future<List<DiaryEntry>> loadAllEntries() async {
     try {
       final jsonString = html.window.localStorage[_entriesKey];
@@ -104,18 +109,18 @@ class StorageService {
     }
   }
 
-  // Delete diary entry by ID
+  // ID로 일기 항목 삭제
   Future<void> deleteEntry(String id) async {
     try {
       final entries = await loadAllEntries();
       entries.removeWhere((entry) => entry.id == id);
       _saveAllEntries(entries);
     } catch (e) {
-      throw Exception('Failed to delete diary entry: $e');
+      throw Exception('일기 삭제에 실패했습니다.');
     }
   }
 
-  // Search diary entries
+  // 일기 항목 검색
   Future<List<DiaryEntry>> searchEntries(String query, {List<String>? tags}) async {
     final allEntries = await loadAllEntries();
     
@@ -129,27 +134,27 @@ class StorageService {
     }).toList();
   }
 
-  // Save app settings
+  // 앱 설정 저장
   Future<void> saveSettings(AppSettings settings) async {
     return saveAppSettings(settings);
   }
 
-  // Load app settings
+  // 앱 설정 로드
   Future<AppSettings> loadSettings() async {
     return loadAppSettings();
   }
 
-  // Save app settings
+  // 앱 설정 저장
   Future<void> saveAppSettings(AppSettings settings) async {
     try {
       final jsonString = jsonEncode(settings.toJson());
       html.window.localStorage[_settingsKey] = jsonString;
     } catch (e) {
-      throw Exception('Failed to save app settings: $e');
+      throw Exception('설정 저장에 실패했습니다.');
     }
   }
 
-  // Load app settings
+  // 앱 설정 로드
   Future<AppSettings> loadAppSettings() async {
     try {
       final jsonString = html.window.localStorage[_settingsKey];
@@ -163,7 +168,7 @@ class StorageService {
     }
   }
 
-  // Export backup
+  // 백업 내보내기
   Future<String> exportBackup() async {
     try {
       final entries = await loadAllEntries();
@@ -178,16 +183,16 @@ class StorageService {
       
       return jsonEncode(backupData);
     } catch (e) {
-      throw Exception('Failed to export backup: $e');
+      throw Exception('백업 내보내기에 실패했습니다.');
     }
   }
 
-  // Import backup
+  // 백업 가져오기
   Future<void> importBackup(String backupJson) async {
     try {
       final backupData = jsonDecode(backupJson) as Map<String, dynamic>;
       
-      // Import entries
+      // 항목 가져오기
       if (backupData['entries'] != null) {
         final entriesData = backupData['entries'] as List;
         final entries = <DiaryEntry>[];
@@ -215,17 +220,17 @@ class StorageService {
         _saveAllEntries(entries);
       }
       
-      // Import settings
+      // 설정 가져오기
       if (backupData['settings'] != null) {
         final settings = AppSettings.fromJson(backupData['settings'] as Map<String, dynamic>);
         await saveAppSettings(settings);
       }
     } catch (e) {
-      throw Exception('Failed to import backup: $e');
+      throw Exception('백업 가져오기에 실패했습니다.');
     }
   }
 
-  // Get entries for specific month (날짜별 메모만)
+  // 특정 월의 항목 가져오기 (날짜별 메모만)
   Future<List<DiaryEntry>> getEntriesForMonth(int year, int month) async {
     final allEntries = await loadAllEntries();
     
@@ -236,7 +241,7 @@ class StorageService {
     }).toList();
   }
 
-  // Check if entry exists for date
+  // 특정 날짜에 항목이 있는지 확인
   Future<bool> hasEntryForDate(String date) async {
     final entries = await loadAllEntries();
     return entries.any((e) => e.type == EntryType.dated && e.date == date);

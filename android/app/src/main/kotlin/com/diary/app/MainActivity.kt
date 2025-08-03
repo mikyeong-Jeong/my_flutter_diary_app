@@ -10,7 +10,9 @@ import java.io.InputStreamReader
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.diary.app/import"
+    private val DEEPLINK_CHANNEL = "com.diary.app/deeplink"
     private var sharedData: String? = null
+    private var pendingDeeplink: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,9 +36,33 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+        
+        // 딥링크 처리를 위한 새로운 채널
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEEPLINK_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getDeeplink" -> {
+                    result.success(pendingDeeplink)
+                    pendingDeeplink = null // Clear after reading
+                }
+                else -> result.notImplemented()
+            }
+        }
     }
 
     private fun handleIntent(intent: Intent?) {
+        // 위젯에서 전달된 딥링크 처리
+        intent?.data?.let { uri ->
+            if (uri.scheme == "diary") {
+                pendingDeeplink = uri.toString()
+                // Flutter 엔진이 준비되면 딥링크 전달
+                flutterEngine?.let { engine ->
+                    MethodChannel(engine.dartExecutor.binaryMessenger, DEEPLINK_CHANNEL)
+                        .invokeMethod("onDeeplink", pendingDeeplink)
+                }
+                return
+            }
+        }
+        
         when (intent?.action) {
             Intent.ACTION_SEND -> {
                 if ("text/plain" == intent.type) {

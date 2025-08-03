@@ -3,7 +3,16 @@
     "allow": [
       "Bash(find:*)",
       "Bash(flutter:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(mkdir:*)",
+      "Bash(rm:*)",
+      "Bash(ls:*)",
+      "Bash(/mnt/c/tools/flutter/bin/flutter analyze)",
+      "Bash(dos2unix:*)",
+      "Bash(/mnt/c/tools/flutter/bin/flutter pub get:*)",
+      "Bash(/mnt/c/tools/flutter/bin/flutter --version)",
+      "Bash(cp:*)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="16dp">
+    
+    <!-- 헤더 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+        
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            
+            <TextView
+                android:id="@+id/widget_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2024년 1월 1일"
+                android:textSize="16sp"
+                android:textColor="#212121"
+                android:fontFamily="sans-serif-medium"/>
+                
+            <TextView
+                android:id="@+id/widget_entry_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="10개의 일기"
+                android:textSize="14sp"
+                android:textColor="#757575"
+                android:layout_marginTop="2dp"/>
+        </LinearLayout>
+        
+        <ImageButton
+            android:id="@+id/widget_new_entry_button"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@drawable/widget_button_background"
+            android:src="@drawable/ic_add"
+            android:contentDescription="새 일기 작성"/>
+    </LinearLayout>
+    
+    <!-- 최근 항목들 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        
+        <!-- 항목 0 -->
+        <LinearLayout
+            android:id="@+id/entry_container_0"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp"
+            android:background="@drawable/widget_entry_background"
+            android:layout_marginBottom="8dp">
+            
+            <TextView
+                android:id="@+id/entry_date_0"
+                android:layout_width="48dp"
+                android:layout_height="wrap_content"
+                android:text="1/1"
+                android:textSize="14sp"
+                android:textColor="#757575"/>
+                
+            <TextView
+                android:id="@+id/entry_title_0"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="새해 첫날"
+                android:textSize="14sp"
+                android:textColor="#212121"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:layout_marginStart="8dp"/>
+                
+            <TextView
+                android:id="@+id/entry_icons_0"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="😊"
+                android:textSize="16sp"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
+        
+        <!-- 항목 1 -->
+        <LinearLayout
+            android:id="@+id/entry_container_1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp"
+            android:background="@drawable/widget_entry_background"
+            android:layout_marginBottom="8dp">
+            
+            <TextView
+                android:id="@+id/entry_date_1"
+                android:layout_width="48dp"
+                android:layout_height="wrap_content"
+                android:text="12/31"
+                android:textSize="14sp"
+                android:textColor="#757575"/>
+                
+            <TextView
+                android:id="@+id/entry_title_1"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="연말 회고"
+                android:textSize="14sp"
+                android:textColor="#212121"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:layout_marginStart="8dp"/>
+                
+            <TextView
+                android:id="@+id/entry_icons_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎉"
+                android:textSize="16sp"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
+        
+        <!-- 항목 2 -->
+        <LinearLayout
+            android:id="@+id/entry_container_2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp"
+            android:background="@drawable/widget_entry_background">
+            
+            <TextView
+                android:id="@+id/entry_date_2"
+                android:layout_width="48dp"
+                android:layout_height="wrap_content"
+                android:text="12/30"
+                android:textSize="14sp"
+                android:textColor="#757575"/>
+                
+            <TextView
+                android:id="@+id/entry_title_2"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="평범한 하루"
+                android:textSize="14sp"
+                android:textColor="#212121"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:layout_marginStart="8dp"/>
+                
+            <TextView
+                android:id="@+id/entry_icons_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="☕"
+                android:textSize="16sp"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -1,62 +1,127 @@
+/**
+ * 모바일 플랫폼용 스토리지 서비스 구현
+ * 
+ * Android/iOS 플랫폼에서 파일 시스템을 사용하여 일기 데이터를 저장하고 관리하는 서비스입니다.
+ * Singleton 패턴을 사용하여 앱 전체에서 하나의 인스턴스만 존재하도록 보장합니다.
+ * 
+ * 주요 기능:
+ * - 일기 항목의 CRUD 작업 (생성, 읽기, 수정, 삭제)
+ * - 앱 설정 저장 및 로드
+ * - 백업 및 복원 기능
+ * - 기존 버전과의 호환성 처리 (마이그레이션)
+ * - JSON 형식의 데이터 저장
+ * 
+ * 저장 위치: 앱 전용 Documents 디렉토리
+ * 파일 형식: UTF-8 인코딩된 JSON 파일
+ */
+
 import 'dart:io';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import '../models/diary_entry.dart';
 import '../models/app_settings.dart';
-import '../utils/json_utils.dart';
 
+/**
+ * 모바일용 스토리지 서비스 클래스
+ * 
+ * Singleton 패턴을 구현하여 앱 전체에서 동일한 인스턴스를 사용합니다.
+ * 파일 시스템을 통해 JSON 형태로 데이터를 영구 저장합니다.
+ */
 class StorageService {
+  /// Singleton 인스턴스
   static final StorageService _instance = StorageService._internal();
+  
+  /// 외부에서 접근 가능한 Singleton 인스턴스 getter
   static StorageService get instance => _instance;
+  
+  /// private 생성자 (Singleton 패턴)
   StorageService._internal();
   
+  /// 앱 설정 파일명
   static const String _settingsFileName = 'app_settings.json';
+  
+  /// 일기 항목들을 저장하는 파일명
   static const String _entriesFileName = 'diary_entries.json';
   
+  /**
+   * 스토리지 서비스 초기화 메서드
+   * 
+   * 현재는 특별한 초기화 작업이 필요하지 않지만,
+   * 향후 데이터베이스 연결이나 초기 설정이 필요할 때 사용할 수 있습니다.
+   */
   Future<void> initialize() async {
-    // Initialize storage service
+    // 현재는 특별한 초기화 작업 없음
+    // 향후 필요시 데이터베이스 연결, 마이그레이션 등을 수행
   }
   
-  // Get app directory
+  /**
+   * 앱 전용 디렉토리를 반환하는 private getter
+   * 
+   * 시스템의 Documents 디렉토리 하위에 'diary_app' 폴더를 생성하고 반환합니다.
+   * 폴더가 존재하지 않으면 자동으로 생성합니다.
+   * 
+   * @return Future<Directory> : 앱 전용 디렉토리
+   * @throws Exception : 디렉토리 생성 실패 시
+   */
   Future<Directory> get _appDirectory async {
+    // 시스템 Documents 디렉토리 가져오기
     final directory = await getApplicationDocumentsDirectory();
+    
+    // 앱 전용 하위 디렉토리 경로 설정
     final appDir = Directory('${directory.path}/diary_app');
+    
+    // 디렉토리가 존재하지 않으면 생성
     if (!await appDir.exists()) {
       await appDir.create(recursive: true);
     }
+    
     return appDir;
   }
 
-  // Save diary entry
+  /**
+   * 일기 항목을 저장하는 메서드
+   * 
+   * 새로운 일기를 추가하거나 기존 일기를 수정합니다.
+   * ID를 기준으로 기존 항목 여부를 판단하여 추가 또는 수정을 결정합니다.
+   * 
+   * @param entry : 저장할 일기 항목
+   * @throws Exception : 저장 실패 시 예외 발생
+   * 
+   * 처리 과정:
+   * 1. 기존 모든 일기 항목 로드
+   * 2. ID로 기존 항목 검색
+   * 3. 기존 항목이 있으면 수정, 없으면 추가
+   * 4. 전체 목록을 파일에 저장
+   */
   Future<void> saveEntry(DiaryEntry entry) async {
     try {
+      // 현재 저장된 모든 일기 항목 로드
       final entries = await loadAllEntries();
       
       // ID로 기존 엔트리 찾기
       final existingIndex = entries.indexWhere((e) => e.id == entry.id);
       if (existingIndex != -1) {
+        // 기존 항목이 있으면 수정
         entries[existingIndex] = entry;
       } else {
+        // 새로운 항목이면 추가
         entries.add(entry);
       }
       
-      // 모든 엔트리 저장
+      // 업데이트된 전체 목록을 파일에 저장
       await _saveAllEntries(entries);
     } catch (e) {
-      throw Exception('Failed to save diary entry: $e');
+      throw Exception('일기 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
     }
   }
 
-  // Save all entries to file
+  // 모든 항목을 파일에 저장
   Future<void> _saveAllEntries(List<DiaryEntry> entries) async {
     try {
       final directory = await _appDirectory;
       final file = File('${directory.path}/$_entriesFileName');
       
-      // 디버깅: 저장 전 데이터 확인
-      for (var entry in entries) {
-        print('Saving entry - Title: ${entry.title}, Content: ${entry.content.substring(0, entry.content.length > 50 ? 50 : entry.content.length)}...');
-      }
+      // 디버깅 코드 제거됨
       
       final jsonData = {
         'entries': entries.map((e) => e.toJson()).toList(),
@@ -65,42 +130,46 @@ class StorageService {
       // JSON 문자열 생성
       final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
       
-      // 디버깅: JSON 문자열 확인
-      print('JSON to save (first 500 chars): ${jsonString.substring(0, jsonString.length > 500 ? 500 : jsonString.length)}');
+      // JSON 문자열 생성 완료
       
       await file.writeAsString(jsonString, encoding: utf8);
     } catch (e) {
-      throw Exception('Failed to save entries: $e');
+      throw Exception('데이터 저장에 실패했습니다.');
     }
   }
 
-  // Load diary entry by ID
+  // ID로 일기 항목 로드
   Future<DiaryEntry?> loadDiaryEntryById(String id) async {
     try {
       final entries = await loadAllEntries();
       return entries.firstWhere(
         (e) => e.id == id,
-        orElse: () => throw Exception('Entry not found'),
+        orElse: () => throw Exception('해당 일기를 찾을 수 없습니다.'),
       );
     } catch (e) {
       return null;
     }
   }
 
-  // Load diary entry for specific date (날짜별 메모용)
+  // loadEntry 메서드 (loadDiaryEntryById의 별칭)
+  Future<DiaryEntry?> loadEntry(String id) async {
+    return loadDiaryEntryById(id);
+  }
+
+  // 특정 날짜의 일기 항목 로드 (날짜별 메모용)
   Future<DiaryEntry?> loadDiaryEntry(String date) async {
     try {
       final entries = await loadAllEntries();
       return entries.firstWhere(
         (e) => e.type == EntryType.dated && e.date == date,
-        orElse: () => throw Exception('Entry not found'),
+        orElse: () => throw Exception('해당 일기를 찾을 수 없습니다.'),
       );
     } catch (e) {
       return null;
     }
   }
 
-  // Load all diary entries
+  // 모든 일기 항목 로드
   Future<List<DiaryEntry>> loadAllEntries() async {
     try {
       final directory = await _appDirectory;
@@ -135,7 +204,7 @@ class StorageService {
     }
   }
 
-  // Migrate old entries from individual files
+  // 개별 파일에서 이전 항목 마이그레이션
   Future<List<DiaryEntry>> _migrateOldEntries() async {
     try {
       final directory = await _appDirectory;
@@ -171,7 +240,7 @@ class StorageService {
           // 마이그레이션 후 기존 파일 삭제
           await file.delete();
         } catch (e) {
-          print('Skipping invalid file: ${file.path}');
+          // 유효하지 않은 파일 건너뛰기
         }
       }
 
@@ -186,18 +255,18 @@ class StorageService {
     }
   }
 
-  // Delete diary entry by ID
+  // ID로 일기 항목 삭제
   Future<void> deleteEntry(String id) async {
     try {
       final entries = await loadAllEntries();
       entries.removeWhere((entry) => entry.id == id);
       await _saveAllEntries(entries);
     } catch (e) {
-      throw Exception('Failed to delete diary entry: $e');
+      throw Exception('일기 삭제에 실패했습니다.');
     }
   }
 
-  // Search diary entries
+  // 일기 항목 검색
   Future<List<DiaryEntry>> searchEntries(String query, {List<String>? tags}) async {
     final allEntries = await loadAllEntries();
     
@@ -211,17 +280,17 @@ class StorageService {
     }).toList();
   }
 
-  // Save app settings
+  // 앱 설정 저장
   Future<void> saveSettings(AppSettings settings) async {
     return saveAppSettings(settings);
   }
 
-  // Load app settings
+  // 앱 설정 로드
   Future<AppSettings> loadSettings() async {
     return loadAppSettings();
   }
 
-  // Save app settings
+  // 앱 설정 저장
   Future<void> saveAppSettings(AppSettings settings) async {
     try {
       final directory = await _appDirectory;
@@ -229,11 +298,11 @@ class StorageService {
       final jsonString = jsonEncode(settings.toJson());
       await file.writeAsString(jsonString, encoding: utf8);
     } catch (e) {
-      throw Exception('Failed to save app settings: $e');
+      throw Exception('설정 저장에 실패했습니다.');
     }
   }
 
-  // Load app settings
+  // 앱 설정 로드
   Future<AppSettings> loadAppSettings() async {
     try {
       final directory = await _appDirectory;
@@ -245,15 +314,15 @@ class StorageService {
         return AppSettings.fromJson(jsonData);
       }
       
-      // Return default settings if file doesn't exist
+      // 파일이 없으면 기본 설정 반환
       return AppSettings();
     } catch (e) {
-      // Return default settings on error
+      // 오류 시 기본 설정 반환
       return AppSettings();
     }
   }
 
-  // Export backup
+  // 백업 내보내기
   Future<String> exportBackup() async {
     try {
       final entries = await loadAllEntries();
@@ -276,20 +345,20 @@ class StorageService {
       final prettyJson = const JsonEncoder.withIndent('  ').convert(json.decode(utf8String));
       
       // 디버깅: 생성된 JSON 확인
-      print('Export backup JSON (first 500 chars): ${prettyJson.substring(0, prettyJson.length > 500 ? 500 : prettyJson.length)}');
+      // 백업 데이터 준비 완료
       
       return prettyJson;
     } catch (e) {
-      throw Exception('Failed to export backup: $e');
+      throw Exception('백업 내보내기에 실패했습니다.');
     }
   }
 
-  // Import backup
+  // 백업 가져오기
   Future<void> importBackup(String backupJson) async {
     try {
       final backupData = jsonDecode(backupJson) as Map<String, dynamic>;
       
-      // Import entries
+      // 항목 가져오기
       if (backupData['entries'] != null) {
         final entriesData = backupData['entries'] as List;
         final entries = <DiaryEntry>[];
@@ -317,17 +386,17 @@ class StorageService {
         await _saveAllEntries(entries);
       }
       
-      // Import settings
+      // 설정 가져오기
       if (backupData['settings'] != null) {
         final settings = AppSettings.fromJson(backupData['settings'] as Map<String, dynamic>);
         await saveAppSettings(settings);
       }
     } catch (e) {
-      throw Exception('Failed to import backup: $e');
+      throw Exception('백업 가져오기에 실패했습니다.');
     }
   }
 
-  // Get entries for specific month (날짜별 메모만)
+  // 특정 월의 항목 가져오기 (날짜별 멤모만)
   Future<List<DiaryEntry>> getEntriesForMonth(int year, int month) async {
     final allEntries = await loadAllEntries();
     
@@ -338,7 +407,7 @@ class StorageService {
     }).toList();
   }
 
-  // Check if entry exists for date
+  // 특정 날짜에 항목이 있는지 확인
   Future<bool> hasEntryForDate(String date) async {
     final entries = await loadAllEntries();
     return entries.any((e) => e.type == EntryType.dated && e.date == date);

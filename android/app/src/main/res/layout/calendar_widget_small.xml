@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="8dp">
+    
+    <!-- 간단한 헤더 -->
+    <TextView
+        android:id="@+id/month_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="2025년 1월"
+        android:textSize="16sp"
+        android:textColor="#212121"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:layout_marginBottom="8dp"/>
+    
+    <!-- 오늘 날짜와 일기 정보 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center">
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📅"
+            android:textSize="36sp"/>
+        
+        <TextView
+            android:id="@+id/today_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1월 3일"
+            android:textSize="18sp"
+            android:textColor="#212121"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginTop="8dp"/>
+        
+        <TextView
+            android:id="@+id/diary_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="이번 달 일기: 5개"
+            android:textSize="14sp"
+            android:textColor="#757575"
+            android:layout_marginTop="4dp"/>
+    </LinearLayout>
+    
+    <!-- 간단한 네비게이션 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp">
+        
+        <ImageButton
+            android:id="@+id/prev_month_button"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="36dp"
+            android:background="@drawable/widget_button_background"
+            android:src="@android:drawable/ic_media_previous"
+            android:contentDescription="이전 달"
+            android:layout_marginEnd="4dp"/>
+        
+        <Button
+            android:id="@+id/open_app_button"
+            android:layout_width="0dp"
+            android:layout_weight="2"
+            android:layout_height="36dp"
+            android:text="열기"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:background="@drawable/widget_button_background"/>
+        
+        <ImageButton
+            android:id="@+id/next_month_button"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="36dp"
+            android:background="@drawable/widget_button_background"
+            android:src="@android:drawable/ic_media_next"
+            android:contentDescription="다음 달"
+            android:layout_marginStart="4dp"/>
+    </LinearLayout>
+    
+    <!-- 캘린더 그리드는 표시하지 않음 (작은 크기) -->
+    <!-- 대신 날짜 셀들을 숨김 처리 -->
+    <GridLayout
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone">
+        <TextView android:id="@+id/day_0" android:visibility="gone"/>
+        <TextView android:id="@+id/day_1" android:visibility="gone"/>
+        <TextView android:id="@+id/day_2" android:visibility="gone"/>
+        <TextView android:id="@+id/day_3" android:visibility="gone"/>
+        <TextView android:id="@+id/day_4" android:visibility="gone"/>
+        <TextView android:id="@+id/day_5" android:visibility="gone"/>
+        <TextView android:id="@+id/day_6" android:visibility="gone"/>
+        <TextView android:id="@+id/day_7" android:visibility="gone"/>
+        <TextView android:id="@+id/day_8" android:visibility="gone"/>
+        <TextView android:id="@+id/day_9" android:visibility="gone"/>
+        <TextView android:id="@+id/day_10" android:visibility="gone"/>
+        <TextView android:id="@+id/day_11" android:visibility="gone"/>
+        <TextView android:id="@+id/day_12" android:visibility="gone"/>
+        <TextView android:id="@+id/day_13" android:visibility="gone"/>
+        <TextView android:id="@+id/day_14" android:visibility="gone"/>
+        <TextView android:id="@+id/day_15" android:visibility="gone"/>
+        <TextView android:id="@+id/day_16" android:visibility="gone"/>
+        <TextView android:id="@+id/day_17" android:visibility="gone"/>
+        <TextView android:id="@+id/day_18" android:visibility="gone"/>
+        <TextView android:id="@+id/day_19" android:visibility="gone"/>
+        <TextView android:id="@+id/day_20" android:visibility="gone"/>
+        <TextView android:id="@+id/day_21" android:visibility="gone"/>
+        <TextView android:id="@+id/day_22" android:visibility="gone"/>
+        <TextView android:id="@+id/day_23" android:visibility="gone"/>
+        <TextView android:id="@+id/day_24" android:visibility="gone"/>
+        <TextView android:id="@+id/day_25" android:visibility="gone"/>
+        <TextView android:id="@+id/day_26" android:visibility="gone"/>
+        <TextView android:id="@+id/day_27" android:visibility="gone"/>
+        <TextView android:id="@+id/day_28" android:visibility="gone"/>
+        <TextView android:id="@+id/day_29" android:visibility="gone"/>
+        <TextView android:id="@+id/day_30" android:visibility="gone"/>
+        <TextView android:id="@+id/day_31" android:visibility="gone"/>
+        <TextView android:id="@+id/day_32" android:visibility="gone"/>
+        <TextView android:id="@+id/day_33" android:visibility="gone"/>
+        <TextView android:id="@+id/day_34" android:visibility="gone"/>
+        <TextView android:id="@+id/day_35" android:visibility="gone"/>
+        <TextView android:id="@+id/day_36" android:visibility="gone"/>
+        <TextView android:id="@+id/day_37" android:visibility="gone"/>
+        <TextView android:id="@+id/day_38" android:visibility="gone"/>
+        <TextView android:id="@+id/day_39" android:visibility="gone"/>
+        <TextView android:id="@+id/day_40" android:visibility="gone"/>
+        <TextView android:id="@+id/day_41" android:visibility="gone"/>
+    </GridLayout>
+    
+</LinearLayout>

@@ -48,10 +48,38 @@ class _WriteScreenState extends State<WriteScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     
-    // 한 번만 초기화
+    // 한 번만 초기화 - 중복 초기화 방지
+    // 화면 이동 시 arguments를 통해 데이터를 받아 초기화
     if (!_isInitialized) {
       final arguments = ModalRoute.of(context)?.settings.arguments;
-      if (arguments is DiaryEntry) {
+      
+      // 위젯에서 전달된 메모 ID 처리
+      if (arguments is Map<String, dynamic>) {
+        final editMemoId = arguments['editMemoId'];
+        if (editMemoId != null) {
+          // 메모 ID로 해당 메모 찾기
+          final provider = context.read<DiaryProvider>();
+          final memo = provider.entries.firstWhere(
+            (entry) => entry.id == editMemoId,
+            orElse: () => DiaryEntry(
+              date: DateTime.now().toIso8601String(),
+              title: '',
+              content: '',
+              type: EntryType.dated,
+            ),
+          );
+          _entry = memo;
+          _isEditing = true;
+          _titleController.text = _entry.title;
+          _contentController.text = _entry.content;
+          _selectedMoods = List.from(_entry.moods);
+          _selectedCustomEmojis = List.from(_entry.customEmojis);
+          _selectedTags = List.from(_entry.tags);
+          if (_entry.date != null) {
+            _selectedDate = DateTime.parse(_entry.date!);
+          }
+        }
+      } else if (arguments is DiaryEntry) {
         _entry = arguments;
         _isEditing = _entry.content.isNotEmpty || _entry.title.isNotEmpty;
         
@@ -89,10 +117,6 @@ class _WriteScreenState extends State<WriteScreen> {
   }
 
   void _saveDiary() async {
-    print('Debug: _selectedDate = $_selectedDate');
-    print('Debug: _formatDate(_selectedDate) = ${_formatDate(_selectedDate)}');
-    print('Debug: _entry.date = ${_entry.date}');
-    print('Debug: _isEditing = $_isEditing');
     
     // 날짜별 메모의 경우 날짜 변경 시 중복 체크
     if (_entry.type == EntryType.dated) {
@@ -131,26 +155,24 @@ class _WriteScreenState extends State<WriteScreen> {
     }
 
     final newDate = _entry.type == EntryType.dated ? _formatDate(_selectedDate) : _entry.date;
-    print('Debug: newDate = $newDate');
 
     // 텍스트 정리 (유효하지 않은 문자 제거)
     final cleanTitle = TextUtils.sanitizeText(_titleController.text.trim());
     final cleanContent = TextUtils.sanitizeText(_contentController.text.trim());
     
-    print('Debug: Original content: ${_contentController.text}');
-    print('Debug: Cleaned content: $cleanContent');
+    // Content sanitization completed
     
     final updatedEntry = _entry.copyWith(
       title: cleanTitle,
       content: cleanContent,
       date: newDate,
-      moods: _selectedMoods,
-      customEmojis: _selectedCustomEmojis,
-      tags: _selectedTags,
+      moods: _entry.type == EntryType.general ? [] : _selectedMoods,
+      customEmojis: _entry.type == EntryType.general ? [] : _selectedCustomEmojis,
+      tags: _entry.type == EntryType.general ? [] : _selectedTags,
       updatedAt: DateTime.now(),
     );
 
-    print('Debug: updatedEntry.date = ${updatedEntry.date}');
+    // Entry updated with new values
 
     final diaryProvider = context.read<DiaryProvider>();
     
@@ -233,14 +255,9 @@ class _WriteScreenState extends State<WriteScreen> {
       lastDate: DateTime(2030),
     );
     if (picked != null) {
-      print('Debug: 선택된 날짜 - $picked');
-      print('Debug: 기존 날짜 - $_selectedDate');
-      
       setState(() {
         _selectedDate = picked;
       });
-      
-      print('Debug: 업데이트된 날짜 - $_selectedDate');
       
       // 날짜 변경 피드백
       ScaffoldMessenger.of(context).showSnackBar(
@@ -341,7 +358,7 @@ class _WriteScreenState extends State<WriteScreen> {
             // 내용 입력 (자동 높이 조정)
             Container(
               constraints: const BoxConstraints(
-                minHeight: 150, // 최소 높이 150px
+                minHeight: 300, // 최소 높이 300px로 증가
               ),
               child: TextField(
                 controller: _contentController,
@@ -352,7 +369,7 @@ class _WriteScreenState extends State<WriteScreen> {
                   alignLabelWithHint: true,
                 ),
                 maxLines: null, // 무제한 라인
-                minLines: 6, // 최소 6라인
+                minLines: 12, // 최소 12라인으로 증가
                 keyboardType: TextInputType.multiline,
                 textInputAction: TextInputAction.newline,
               ),
@@ -388,69 +405,68 @@ class _WriteScreenState extends State<WriteScreen> {
                 }).toList(),
               ),
               const SizedBox(height: 16),
-            ],
-            
-            // 사용자 지정 이모지 입력
-            const Text('사용자 지정 이모지', 
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _customEmojiController,
-                    decoration: const InputDecoration(
-                      hintText: '이모지 입력 (예: 😄)',
-                      border: OutlineInputBorder(),
-                      isDense: true,
+              
+              // 사용자 지정 이모지 입력
+              const Text('사용자 지정 이모지', 
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _customEmojiController,
+                      decoration: const InputDecoration(
+                        hintText: '이모지 입력 (예: 😄)',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      onSubmitted: (_) => _addCustomEmoji(),
                     ),
-                    onSubmitted: (_) => _addCustomEmoji(),
                   ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: _addCustomEmoji,
+                    child: const Text('추가'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              
+              // 선택된 사용자 지정 이모지 표시
+              if (_selectedCustomEmojis.isNotEmpty) ...[
+                Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: _selectedCustomEmojis.map((emoji) {
+                    return Chip(
+                      label: Text(emoji, style: const TextStyle(fontSize: 18)),
+                      onDeleted: () {
+                        setState(() {
+                          _selectedCustomEmojis.remove(emoji);
+                        });
+                      },
+                      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.7),
+                    );
+                  }).toList(),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _addCustomEmoji,
-                  child: const Text('추가'),
-                ),
+                const SizedBox(height: 16),
               ],
-            ),
-            const SizedBox(height: 8),
-            
-            // 선택된 사용자 지정 이모지 표시
-            if (_selectedCustomEmojis.isNotEmpty) ...[
+              
+              // 태그 섹션
+              const Text('태그', 
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              
+              // 기본 제공 태그 (항상 100% 보이도록)
+              const Text('기본 태그', 
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 8),
               Wrap(
                 spacing: 8.0,
                 runSpacing: 8.0,
-                children: _selectedCustomEmojis.map((emoji) {
-                  return Chip(
-                    label: Text(emoji, style: const TextStyle(fontSize: 18)),
-                    onDeleted: () {
-                      setState(() {
-                        _selectedCustomEmojis.remove(emoji);
-                      });
-                    },
-                    backgroundColor: Theme.of(context).primaryColor.withOpacity(0.7),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
-            ],
-            
-            // 태그 섹션
-            const Text('태그', 
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            
-            // 기본 제공 태그 (항상 100% 보이도록)
-            const Text('기본 태그', 
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8.0,
-              runSpacing: 8.0,
-              children: _defaultTags.map((tag) {
-                final isSelected = _selectedTags.contains(tag);
-                return FilterChip(
+                children: _defaultTags.map((tag) {
+                  final isSelected = _selectedTags.contains(tag);
+                  return FilterChip(
                   label: Text(tag, style: const TextStyle(fontSize: 14)),
                   selected: isSelected,
                   onSelected: (selected) {
@@ -516,6 +532,7 @@ class _WriteScreenState extends State<WriteScreen> {
               ),
               const SizedBox(height: 16),
             ],
+            ], // if (!isGeneral) 닫기
             
             // 메타 정보 표시 (일반 메모의 경우)
             if (isGeneral && _isEditing) ...[
@@ -537,7 +554,7 @@ class _WriteScreenState extends State<WriteScreen> {
                 ),
               ),
             ],
-            ],
+            ], // Column children 닫기
           ),
         ),
       ),

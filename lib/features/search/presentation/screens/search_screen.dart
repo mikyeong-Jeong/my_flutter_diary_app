@@ -4,6 +4,13 @@ import 'package:intl/intl.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
 
+/// 검색 화면 위젯
+/// 
+/// 일기와 메모를 검색할 수 있는 화면입니다.
+/// - 텍스트 검색: 제목과 내용에서 키워드 검색
+/// - 태그 필터: 특정 태그로 필터링
+/// - 날짜 범위: 특정 기간의 일기 검색
+/// - 탭 분리: 날짜별 일기와 일반 메모 각각 검색
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
@@ -24,22 +31,29 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
   @override
   void initState() {
     super.initState();
+    // 2개 탭(날짜별 일기, 일반 메모) 컨트롤러 초기화
     _tabController = TabController(length: 2, vsync: this);
     
-    // 초기에 태그 목록을 로드
+    // 초기에 태그 목록을 로드 - 태그 필터링에 사용
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAvailableTags();
     });
   }
 
+  /// 사용 가능한 태그 목록 로드
+  /// 
+  /// 모든 일기와 메모에서 사용된 태그를 수집해서
+  /// 필터링에 사용할 태그 목록을 만듭니다.
   void _loadAvailableTags() {
     final diaryProvider = context.read<DiaryProvider>();
     final allTags = <String>{};
     
+    // 모든 엔트리에서 태그 수집
     for (final entry in diaryProvider.entries) {
       allTags.addAll(entry.tags);
     }
     
+    // 알파벳 순으로 정렬
     setState(() {
       _availableTags = allTags.toList()..sort();
     });
@@ -560,7 +574,7 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
             onTap: () {
               Navigator.pushNamed(
                 context,
-                '/write',
+                '/read',
                 arguments: entry,
               );
             },

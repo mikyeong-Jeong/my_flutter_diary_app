@@ -76,4 +76,14 @@ class JsonUtils {
     const encoder = JsonEncoder.withIndent('  ');
     return encoder.convert(jsonObject);
   }
+
+  /// JSON 문자열을 안전하게 디코딩 시도
+  /// 실패 시 null 반환
+  static dynamic tryDecode(String jsonString) {
+    try {
+      return jsonDecode(jsonString);
+    } catch (e) {
+      return null;
+    }
+  }
 }

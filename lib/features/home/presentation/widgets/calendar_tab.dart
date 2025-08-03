@@ -1,3 +1,18 @@
+/**
+ * 캘린더 탭 위젯
+ * 
+ * 월간 캘린더 뷰를 제공하여 날짜별 일기 작성 현황을 시각적으로 표시하고
+ * 특정 날짜를 선택하여 해당 날짜의 일기를 조회하거나 작성할 수 있습니다.
+ * 
+ * 주요 기능:
+ * - 월간 캘린더 표시
+ * - 일기가 있는 날짜에 마커 표시
+ * - 공휴일 표시 (빨간색)
+ * - 토요일 표시 (파란색)
+ * - 날짜 선택 시 해당 날짜 일기 미리보기
+ * - 선택된 날짜의 일기 작성/수정 버튼
+ */
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -6,6 +21,11 @@ import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
 import '../../../../core/services/calendar_service.dart';
 
+/**
+ * 캘린더 탭 StatefulWidget
+ * 
+ * table_calendar 패키지를 사용하여 월간 캘린더를 구현합니다.
+ */
 class CalendarTab extends StatefulWidget {
   const CalendarTab({super.key});
 
@@ -13,11 +33,29 @@ class CalendarTab extends StatefulWidget {
   State<CalendarTab> createState() => _CalendarTabState();
 }
 
+/**
+ * 캘린더 탭 State 클래스
+ * 
+ * 캘린더 상태 관리와 날짜 선택 로직을 처리합니다.
+ */
 class _CalendarTabState extends State<CalendarTab> {
+  /// 현재 캘린더에서 포커스된 날짜 (표시되는 월)
   DateTime _focusedDay = DateTime.now();
+  
+  /// 사용자가 선택한 날짜
   DateTime? _selectedDay;
+  
+  /// 캘린더 표시 형식 (월간/주간)
   CalendarFormat _calendarFormat = CalendarFormat.month;
+  
+  /// 공휴일 정보를 제공하는 캘린더 서비스
   final CalendarService _calendarService = CalendarService.instance;
+
+  /// 캘린더에서 표시할 첫 번째 날짜
+  final DateTime _firstDay = DateTime.utc(1902, 1, 1);
+  
+  /// 캘린더에서 표시할 마지막 날짜
+  final DateTime _lastDay = DateTime.utc(2100, 12, 31);
 
   @override
   void initState() {
@@ -25,7 +63,6 @@ class _CalendarTabState extends State<CalendarTab> {
     _selectedDay = DateTime.now();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DiaryProvider>().setSelectedDate(_selectedDay!);
-      // 캘린더 서비스 초기화
       _initializeCalendarService();
     });
   }
@@ -37,7 +74,13 @@ class _CalendarTabState extends State<CalendarTab> {
     }
   }
 
-  // OS의 캘린더 또는 고정 공휴일 확인
+  Future<void> _loadHolidays(int year) async {
+    await _calendarService.loadHolidaysForYear(year);
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   bool _isHoliday(DateTime day) {
     return _calendarService.isHoliday(day);
   }
@@ -66,7 +109,6 @@ class _CalendarTabState extends State<CalendarTab> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    // 헤더
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -83,9 +125,10 @@ class _CalendarTabState extends State<CalendarTab> {
                         ),
                         TextButton(
                           onPressed: () {
+                            _loadHolidays(selectedYear);
+                            
                             setState(() {
                               _focusedDay = DateTime(selectedYear, selectedMonth, 1);
-                              // 선택된 날짜 업데이트
                               final lastDayOfMonth = DateTime(selectedYear, selectedMonth + 1, 0).day;
                               if (_selectedDay!.day > lastDayOfMonth) {
                                 _selectedDay = DateTime(selectedYear, selectedMonth, lastDayOfMonth);
@@ -101,12 +144,9 @@ class _CalendarTabState extends State<CalendarTab> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    
-                    // 년도/월 피커
                     Expanded(
                       child: Row(
                         children: [
-                          // 년도 선택
                           Expanded(
                             child: Column(
                               children: [
@@ -126,16 +166,16 @@ class _CalendarTabState extends State<CalendarTab> {
                                     diameterRatio: 1.2,
                                     physics: const FixedExtentScrollPhysics(),
                                     controller: FixedExtentScrollController(
-                                      initialItem: selectedYear - 2020,
+                                      initialItem: selectedYear - _firstDay.year,
                                     ),
                                     onSelectedItemChanged: (index) {
                                       setDialogState(() {
-                                        selectedYear = 2020 + index;
+                                        selectedYear = _firstDay.year + index;
                                       });
                                     },
                                     childDelegate: ListWheelChildBuilderDelegate(
                                       builder: (context, index) {
-                                        final year = 2020 + index;
+                                        final year = _firstDay.year + index;
                                         final isSelected = year == selectedYear;
                                         return Center(
                                           child: Text(
@@ -148,17 +188,14 @@ class _CalendarTabState extends State<CalendarTab> {
                                           ),
                                         );
                                       },
-                                      childCount: 11, // 2020-2030
+                                      childCount: _lastDay.year - _firstDay.year + 1,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          
                           const SizedBox(width: 20),
-                          
-                          // 월 선택
                           Expanded(
                             child: Column(
                               children: [
@@ -231,19 +268,16 @@ class _CalendarTabState extends State<CalendarTab> {
 
         return CustomScrollView(
           slivers: [
-            // 커스텀 헤더와 달력을 SliverToBoxAdapter로 고정
             SliverToBoxAdapter(
               child: Container(
                 color: Theme.of(context).scaffoldBackgroundColor,
                 child: Column(
                   children: [
-                    // 커스텀 헤더
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // 이전 달 버튼
                           IconButton(
                             icon: const Icon(Icons.chevron_left),
                             onPressed: () {
@@ -252,8 +286,6 @@ class _CalendarTabState extends State<CalendarTab> {
                               });
                             },
                           ),
-                          
-                          // 년도 월 표시 (클릭 가능)
                           Expanded(
                             child: InkWell(
                               onTap: _showYearMonthPicker,
@@ -279,8 +311,6 @@ class _CalendarTabState extends State<CalendarTab> {
                               ),
                             ),
                           ),
-                          
-                          // 다음 달 버튼
                           IconButton(
                             icon: const Icon(Icons.chevron_right),
                             onPressed: () {
@@ -292,23 +322,26 @@ class _CalendarTabState extends State<CalendarTab> {
                         ],
                       ),
                     ),
-                    
-                    // 달력
-                    TableCalendar<DiaryEntry>(
-                      firstDay: DateTime.utc(2020, 1, 1),
-                      lastDay: DateTime.utc(2030, 12, 31),
-                      focusedDay: _focusedDay,
-                      calendarFormat: _calendarFormat,
-                      selectedDayPredicate: (day) {
-                        return isSameDay(_selectedDay, day);
-                      },
-                      eventLoader: (day) {
-                        return _getEntriesForDay(day, entries);
-                      },
-                      startingDayOfWeek: StartingDayOfWeek.sunday,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0), // 좌우 패딩 추가
+                      child: TableCalendar<DiaryEntry>(
+                        locale: 'ko_KR',
+                        firstDay: _firstDay,
+                        lastDay: _lastDay,
+                        focusedDay: _focusedDay,
+                        calendarFormat: _calendarFormat,
+                        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                        eventLoader: (day) => _getEntriesForDay(day, entries),
+                        startingDayOfWeek: StartingDayOfWeek.sunday,
+                        daysOfWeekHeight: 45, // 요일 행 높이 설정
+                        daysOfWeekStyle: const DaysOfWeekStyle(
+                          weekdayStyle: TextStyle(fontWeight: FontWeight.bold),
+                          weekendStyle: TextStyle(fontWeight: FontWeight.bold), // 색상 제거 (dowBuilder에서 처리)
+                        ),
                       calendarStyle: CalendarStyle(
                         outsideDaysVisible: false,
-                        weekendTextStyle: TextStyle(color: Colors.red[400]),
+                        weekendTextStyle: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                        holidayTextStyle: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                         selectedDecoration: BoxDecoration(
                           color: Theme.of(context).primaryColor,
                           shape: BoxShape.circle,
@@ -323,47 +356,32 @@ class _CalendarTabState extends State<CalendarTab> {
                         ),
                       ),
                       calendarBuilders: CalendarBuilders(
-                        defaultBuilder: (context, day, focusedDay) {
-                          // 토요일인 경우
-                          if (day.weekday == DateTime.saturday) {
-                            return Center(
-                              child: Text(
-                                '${day.day}',
-                                style: TextStyle(color: Colors.blue[400]),
-                              ),
-                            );
-                          }
-                          // 일요일인 경우
-                          if (day.weekday == DateTime.sunday) {
-                            return Center(
-                              child: Text(
-                                '${day.day}',
-                                style: TextStyle(color: Colors.red[400]),
-                              ),
-                            );
-                          }
-                          // 공휴일인 경우
-                          if (_isHoliday(day)) {
-                            return Center(
-                              child: Text(
-                                '${day.day}',
-                                style: TextStyle(color: Colors.red[400]),
-                              ),
-                            );
-                          }
-                          return null;
-                        },
-                        selectedBuilder: (context, day, focusedDay) {
+                        dowBuilder: (context, day) {
+                          final text = DateFormat.E('ko_KR').format(day);
                           return Container(
-                            margin: const EdgeInsets.all(4.0),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
+                            alignment: Alignment.center,
+                            height: 40, // 고정 높이 설정
+                            padding: const EdgeInsets.symmetric(vertical: 8), // 상하 패딩 추가
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown, // 텍스트가 컨테이너를 초과하면 축소
                               child: Text(
-                                '${day.day}',
-                                style: const TextStyle(color: Colors.white),
+                                text,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: day.weekday == DateTime.saturday ? Colors.blue[600] : 
+                                         day.weekday == DateTime.sunday ? Colors.red[600] : null,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        defaultBuilder: (context, day, focusedDay) {
+                          return Center(
+                            child: Text(
+                              '${day.day}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: day.weekday == DateTime.saturday ? Colors.blue[600] : (day.weekday == DateTime.sunday || _isHoliday(day)) ? Colors.red[600] : null,
                               ),
                             ),
                           );
@@ -378,28 +396,33 @@ class _CalendarTabState extends State<CalendarTab> {
                             child: Center(
                               child: Text(
                                 '${day.day}',
-                                style: TextStyle(
-                                  color: _isHoliday(day) 
-                                      ? Colors.red[400] 
-                                      : day.weekday == DateTime.saturday
-                                          ? Colors.blue[400]
-                                          : day.weekday == DateTime.sunday
-                                              ? Colors.red[400]
-                                              : null,
-                                ),
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                            ),
+                          );
+                        },
+                        selectedBuilder: (context, day, focusedDay) {
+                          return Container(
+                            margin: const EdgeInsets.all(4.0),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${day.day}',
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                               ),
                             ),
                           );
                         },
                       ),
-                      headerStyle: const HeaderStyle(
-                        titleCentered: false,
+                      headerStyle: HeaderStyle(
+                        titleCentered: true,
                         formatButtonVisible: false,
-                        leftChevronVisible: false,
-                        rightChevronVisible: false,
-                        headerPadding: EdgeInsets.zero,
-                        headerMargin: EdgeInsets.zero,
-                        titleTextStyle: TextStyle(fontSize: 0, height: 0),
+                        leftChevronVisible: false,  // 왼쪽 화살표 숨기기
+                        rightChevronVisible: false, // 오른쪽 화살표 숨기기
+                        titleTextFormatter: (date, locale) => '', // 제목 텍스트를 빈 문자열로
                       ),
                       onDaySelected: (selectedDay, focusedDay) {
                         if (!isSameDay(_selectedDay, selectedDay)) {
@@ -418,90 +441,33 @@ class _CalendarTabState extends State<CalendarTab> {
                         }
                       },
                       onPageChanged: (focusedDay) {
+                        if (_focusedDay.year != focusedDay.year) {
+                          _loadHolidays(focusedDay.year);
+                        }
                         setState(() {
                           _focusedDay = focusedDay;
                         });
                       },
-                    ),
-                    
-                    // 형식 변경 버튼
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _calendarFormat = _calendarFormat == CalendarFormat.month
-                                    ? CalendarFormat.twoWeeks
-                                    : _calendarFormat == CalendarFormat.twoWeeks
-                                        ? CalendarFormat.week
-                                        : CalendarFormat.month;
-                              });
-                            },
-                            icon: Icon(
-                              _calendarFormat == CalendarFormat.month
-                                  ? Icons.calendar_view_month
-                                  : _calendarFormat == CalendarFormat.twoWeeks
-                                      ? Icons.view_week
-                                      : Icons.view_agenda,
-                              size: 20,
-                            ),
-                            label: Text(
-                              _calendarFormat == CalendarFormat.month
-                                  ? '월간'
-                                  : _calendarFormat == CalendarFormat.twoWeeks
-                                      ? '2주간'
-                                      : '주간',
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                              foregroundColor: Theme.of(context).primaryColor,
-                              elevation: 0,
-                            ),
-                          ),
-                        ],
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            
-            // 구분선
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 8.0),
-            ),
-            
-            // 메모 목록을 SliverList로 구성
+            const SliverToBoxAdapter(child: SizedBox(height: 8.0)),
             selectedDayEntries.isEmpty
                 ? SliverFillRemaining(
+                    hasScrollBody: false,
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.note_add,
-                            size: 64,
-                            color: Colors.grey[400],
-                          ),
+                          Icon(Icons.note_add, size: 64, color: Colors.grey[400]),
                           const SizedBox(height: 16),
-                          Text(
-                            '${DateFormat('M월 d일').format(_selectedDay!)}의 일기가 없습니다',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                            ),
-                          ),
+                          Text('${DateFormat('M월 d일').format(_selectedDay!)}의 일기가 없습니다', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
                           const SizedBox(height: 8),
-                          Text(
-                            '새로운 일기를 작성해보세요',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[500],
-                            ),
-                          ),
+                          Text('새로운 일기를 작성해보세요', style: TextStyle(fontSize: 14, color: Colors.grey[500])),
                         ],
                       ),
                     ),
@@ -515,66 +481,39 @@ class _CalendarTabState extends State<CalendarTab> {
                           return Card(
                             margin: const EdgeInsets.only(bottom: 12.0),
                             child: InkWell(
-                              onTap: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/write',
-                                  arguments: entry,
-                                );
-                              },
+                              onTap: () => Navigator.pushNamed(context, '/read', arguments: entry),
                               borderRadius: BorderRadius.circular(12),
                               child: Padding(
                                 padding: const EdgeInsets.all(16.0),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // 제목과 이모지
                                     Row(
                                       children: [
                                         Expanded(
                                           child: Text(
                                             entry.title.isEmpty ? '제목 없음' : entry.title,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                            ),
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                           ),
                                         ),
                                         if (entry.allEmojis.isNotEmpty)
                                           Wrap(
                                             spacing: 4,
-                                            children: entry.allEmojis
-                                                .map<Widget>((emoji) => Text(emoji, style: const TextStyle(fontSize: 20)))
-                                                .toList(),
+                                            children: entry.allEmojis.map<Widget>((emoji) => Text(emoji, style: const TextStyle(fontSize: 20))).toList(),
                                           ),
                                       ],
                                     ),
                                     const SizedBox(height: 8),
-                                    // 전체 내용 표시
-                                    Text(
-                                      entry.content,
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
+                                    Text(entry.content, style: const TextStyle(fontSize: 14)),
                                     if (entry.tags.isNotEmpty) ...[
                                       const SizedBox(height: 8),
                                       Wrap(
                                         spacing: 4,
-                                        children: entry.tags
-                                            .map<Widget>((tag) => Chip(
-                                                  label: Text(tag),
-                                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                                ))
-                                            .toList(),
+                                        children: entry.tags.map<Widget>((tag) => Chip(label: Text(tag), materialTapTargetSize: MaterialTapTargetSize.shrinkWrap)).toList(),
                                       ),
                                     ],
                                     const SizedBox(height: 8),
-                                    Text(
-                                      '작성: ${entry.formattedCreatedAt}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
+                                    Text('작성: ${entry.formattedCreatedAt}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                                   ],
                                 ),
                               ),

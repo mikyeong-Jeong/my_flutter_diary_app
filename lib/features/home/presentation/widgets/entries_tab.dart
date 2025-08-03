@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/providers/diary_provider.dart';
-import '../../../../core/models/diary_entry.dart';
 
 class EntriesTab extends StatelessWidget {
   const EntriesTab({super.key});
@@ -53,7 +51,7 @@ class EntriesTab extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 12.0),
               child: InkWell(
                 onTap: () {
-                  Navigator.pushNamed(context, '/write', arguments: entry);
+                  Navigator.pushNamed(context, '/read', arguments: entry);
                 },
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
