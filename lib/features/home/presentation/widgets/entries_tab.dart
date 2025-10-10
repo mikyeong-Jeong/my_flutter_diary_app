@@ -9,7 +9,7 @@ class EntriesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<DiaryProvider>(
       builder: (context, diaryProvider, child) {
-        final entries = diaryProvider.datedEntries;
+        final entries = diaryProvider.diaries;
 
         if (entries.isEmpty) {
           return Center(

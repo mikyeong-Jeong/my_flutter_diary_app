@@ -19,10 +19,11 @@ part 'diary_entry.g.dart';
 /**
  * 다이어리 항목 타입 열거형
  * 
- * dated: 특정 날짜에 작성된 일기
+ * dated: 특정 날짜에 작성된 일기 (이모지, 태그 포함)
  * general: 날짜에 구애받지 않는 일반 메모
+ * datedNote: 특정 날짜에 작성된 간단한 메모 (이모지, 태그 없음)
  */
-enum EntryType { dated, general }
+enum EntryType { dated, general, datedNote }
 
 /**
  * 다이어리 항목 클래스

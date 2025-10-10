@@ -5,7 +5,7 @@
  * - 달력 탭: 월간 캘린더 뷰로 날짜별 일기 확인
  * - 일기 탭: 날짜별 일기 목록 표시
  * - 메모 탭: 일반 메모 목록 관리
- * - 계산기 탭: 스프레드시트 스타일의 계산기
+ * - 날짜 메모 탭: 날짜별 메모 작성 및 관리
  * 
  * 플로팅 액션 버튼을 통해 탭에 따라 적절한 일기/메모 작성 기능을 제공합니다.
  */
@@ -17,7 +17,7 @@ import '../../../../core/models/diary_entry.dart';
 import '../widgets/calendar_tab.dart';
 import '../widgets/entries_tab.dart';
 import '../widgets/general_notes_tab.dart';
-import '../widgets/calculator_tab.dart';
+import '../widgets/dated_notes_tab.dart';
 
 /**
  * 홈 화면 StatefulWidget
@@ -38,7 +38,7 @@ class HomeScreen extends StatefulWidget {
  * 앱 시작 시 데이터를 로드하고 탭 기반 네비게이션을 관리합니다.
  */
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  /// 네 개 탭(달력, 일기, 메모, 계산기)을 관리하는 컨트롤러
+  /// 네 개 탭(달력, 일기, 메모, 날짜 메모)을 관리하는 컨트롤러
   late TabController _tabController;
   
   /// 메모 탭에서 선택할 특정 메모 ID
@@ -122,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Tab(icon: Icon(Icons.calendar_today), text: '달력'),
             Tab(icon: Icon(Icons.book), text: '일기'),
             Tab(icon: Icon(Icons.note), text: '메모'),
-            Tab(icon: Icon(Icons.calculate), text: '계산기'),
+            Tab(icon: Icon(Icons.event_note), text: '날짜 메모'),
           ],
         ),
       ),
@@ -136,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   const CalendarTab(),
                   const EntriesTab(),
                   GeneralNotesTab(targetMemoId: _targetMemoId),
-                  const CalculatorTab(),
+                  const DatedNotesTab(),
                 ],
               ),
             ),
@@ -227,12 +227,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       onPressed: () {
                         Navigator.pushNamed(
                           context,
-                          '/write',
+                          '/dated_note',
                           arguments: DiaryEntry(
                             date: _formatDate(DateTime.now()),
                             title: '',
                             content: '',
-                            type: EntryType.dated,
+                            type: EntryType.datedNote,
                           ),
                         );
                       },
@@ -266,8 +266,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             );
           } else {
-            // 계산기 탭: FloatingActionButton 숨기기
-            return const SizedBox.shrink();
+            // 날짜 메모 탭: 날짜별 메모 추가/편집 버튼
+            return FloatingActionButton(
+              heroTag: "dated_note_tab",
+              onPressed: () {
+                final today = DateTime.now();
+                // 오늘 날짜의 기존 날짜 메모 확인
+                final todayNotes = diaryProvider.datedNotes.where((entry) {
+                  if (entry.date == null) return false;
+                  final entryDate = DateTime.parse(entry.date!);
+                  return entryDate.year == today.year && 
+                         entryDate.month == today.month && 
+                         entryDate.day == today.day;
+                }).toList();
+                final existingNote = todayNotes.isNotEmpty ? todayNotes.first : null;
+                
+                if (existingNote != null) {
+                  // 기존 메모가 있으면 편집
+                  Navigator.pushNamed(context, '/dated_note', arguments: existingNote);
+                } else {
+                  // 기존 메모가 없으면 새로 작성
+                  Navigator.pushNamed(
+                    context,
+                    '/dated_note',
+                    arguments: DiaryEntry(
+                      date: _formatDate(today),
+                      title: '',
+                      content: '',
+                      type: EntryType.datedNote,
+                    ),
+                  );
+                }
+              },
+              child: const Icon(Icons.add),
+              tooltip: '날짜별 메모 작성',
+            );
           }
         },
       ),

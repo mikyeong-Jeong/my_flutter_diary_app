@@ -3,32 +3,17 @@
 /// 일기와 메모에 입력된 텍스트를 정제하고 유효성을 검사하는 유틸리티 클래스입니다.
 /// 유효하지 않은 유니코드 문자를 제거하여 데이터 무결성을 보장합니다.
 class TextUtils {
-  /// 문자열이 유효한 UTF-8인지 확인하고 정리
+  /// 사용자 입력 텍스트를 그대로 반환
   /// 
-  /// 유효하지 않은 유니코드 문자를 필터링하여 안전한 문자열을 반환합니다.
-  /// 한글, 영어, 숫자, 기본 기호, 이모지 등을 허용합니다.
+  /// 개인 메모 앱의 특성상 모든 사용자 입력을 허용합니다.
+  /// 이모지, 특수문자, 텍스트 기호 등이 모두 정상적으로 저장됩니다.
   /// 
-  /// @param text : 정리할 문자열
-  /// @return String : 유효한 문자만 포함된 문자열
+  /// @param text : 사용자 입력 문자열
+  /// @return String : 입력된 문자열 그대로 반환
   static String sanitizeText(String text) {
-    try {
-      // 유효하지 않은 문자 제거
-      final buffer = StringBuffer();
-      for (int i = 0; i < text.length; i++) {
-        final char = text[i];
-        final codeUnit = char.codeUnitAt(0);
-        
-        // 유효한 유니코드 범위인지 확인
-        if (_isValidUnicode(codeUnit)) {
-          buffer.write(char);
-        }
-      }
-      
-      return buffer.toString();
-    } catch (e) {
-      // 에러 발생 시 원본 텍스트 반환
-      return text;
-    }
+    // 개인 메모 앱이므로 사용자 입력을 그대로 보존
+    // 모든 이모지, 특수문자, 텍스트 기호 허용
+    return text;
   }
   
   /// 유효한 유니코드 문자인지 확인

@@ -11,9 +11,12 @@ DiaryEntry _$DiaryEntryFromJson(Map<String, dynamic> json) => DiaryEntry(
       date: json['date'] as String?,
       title: json['title'] as String,
       content: json['content'] as String,
-      moods: (json['moods'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      moods:
+          (json['moods'] as List<dynamic>?)?.map((e) => e as String).toList(),
       tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      customEmojis: (json['customEmojis'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      customEmojis: (json['customEmojis'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
       createdAt: json['createdAt'] == null
           ? null
           : DateTime.parse(json['createdAt'] as String),
@@ -41,4 +44,5 @@ Map<String, dynamic> _$DiaryEntryToJson(DiaryEntry instance) =>
 const _$EntryTypeEnumMap = {
   EntryType.dated: 'dated',
   EntryType.general: 'general',
+  EntryType.datedNote: 'datedNote',
 };

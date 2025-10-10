@@ -65,6 +65,16 @@ flutter clean
 flutter build apk
 ```
 
+### Widget Deep Link Testing
+Test widget functionality using ADB commands:
+```bash
+# Test widget data update
+adb shell am broadcast -a android.appwidget.action.APPWIDGET_UPDATE
+
+# Test deep links from widget
+adb shell am start -W -a android.intent.action.VIEW -d "diaryapp://write?type=general"
+```
+
 ## Architecture
 
 ### Core Architecture Pattern
@@ -93,14 +103,18 @@ flutter build apk
 Located in `android/app/src/main/kotlin/com/diary/app/`:
 - `DiaryAppWidget.kt`: Main home widget showing recent entries
 - `MemoWidget.kt`: Configurable memo display widget
+- `CalendarWidget.kt`: Calendar widget showing month view
+- `SingleMemoWidget.kt`: Individual memo widget with configuration
+- `SingleMemoWidgetConfigureActivity.kt`: Configuration activity for memo widget
 - `WidgetUtils.kt`: Shared utility functions
 - Uses Flutter's `home_widget` package for communication
 
 ### Feature Structure
 ```
 lib/features/
-├── home/        # Calendar, entry list, memo tab
+├── home/        # Calendar, entry list, memo tab, calculator tab
 ├── write/       # Diary/memo creation and editing
+├── read/        # Diary reading screen
 ├── search/      # Search and filtering functionality  
 ├── settings/    # Backup, statistics, theme settings
 ```
@@ -111,6 +125,12 @@ lib/features/
 3. **Storage** → File system (mobile) or localStorage (web)
 4. **Provider** → Notifies UI listeners for updates
 5. **Widget Service** → Updates Android home widgets when needed
+
+### Deep Link System
+- **Main app navigation**: `main.dart:_handleDeeplink()` handles navigation routing
+- **Widget callbacks**: `backgroundCallback()` processes widget interactions
+- **Method channels**: Communication between native Android and Flutter for widget actions
+- **Supported schemes**: `diaryapp://` with hosts: `home`, `write`, `viewmemo`, `viewdate`
 
 ## Development Guidelines
 
@@ -136,6 +156,9 @@ lib/features/
 - Widgets communicate with Flutter through `home_widget` package
 - Update widget data via `WidgetService.updateWidget()`
 - Test widget behavior after app rebuilds
+- Deep link URLs use format: `diaryapp://host?param=value`
+- Widget configuration stored in SharedPreferences
+- Multiple widget types: DiaryApp, Memo, Calendar, SingleMemo
 
 ### Localization
 - Primary language is Korean (`ko_KR`)
@@ -169,6 +192,9 @@ flutter clean && flutter build apk
 - `home_widget ^0.7.0` - Android widget integration
 - `path_provider ^2.1.5` - File system access
 - `share_plus ^7.2.2` - File sharing functionality
+- `shared_preferences ^2.2.3` - Widget data sharing
+- `file_selector ^1.0.3` - File operations (web/desktop)
+- `permission_handler ^12.0.1` - Android permissions
 
 ## Testing
 - Entry point: `test/widget_test.dart`

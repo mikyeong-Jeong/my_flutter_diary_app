@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -278,17 +279,9 @@ class WidgetService {
       await prefs.setString('entries', jsonString);
       // Flutter가 사용하는 실제 키로도 저장 (flutter. 접두사)
       await prefs.setString('flutter.entries', jsonString);
-      
-      // 디버깅을 위한 로그
-      print('Saved ${entriesJson.length} entries to SharedPreferences');
-      print('First few characters of JSON: ${jsonString.substring(0, jsonString.length > 100 ? 100 : jsonString.length)}...');
-      
-      // 저장된 키 확인
-      final keys = prefs.getKeys();
-      print('SharedPreferences keys: $keys');
     } catch (e) {
       // 저장 실패 시 에러 로그 출력
-      print('Error saving entries to SharedPreferences: $e');
+      debugPrint('Error saving entries to SharedPreferences: $e');
     }
   }
 

@@ -98,6 +98,20 @@ class DiaryProvider extends ChangeNotifier {
    * @return List<DiaryEntry> : 일반 메모 목록
    */
   List<DiaryEntry> get generalNotes => _entries.where((e) => e.type == EntryType.general).toList();
+  
+  /**
+   * 날짜별 일기만 필터링하여 반환하는 getter (이모지, 태그 포함)
+   * 특정 날짜에 작성된 풍부한 일기들만 가져옵니다.
+   * @return List<DiaryEntry> : 날짜별 일기 목록
+   */
+  List<DiaryEntry> get diaries => _entries.where((e) => e.type == EntryType.dated).toList();
+  
+  /**
+   * 날짜별 메모만 필터링하여 반환하는 getter (간단한 텍스트만)
+   * 특정 날짜에 작성된 간단한 메모들만 가져옵니다.
+   * @return List<DiaryEntry> : 날짜별 메모 목록
+   */
+  List<DiaryEntry> get datedNotes => _entries.where((e) => e.type == EntryType.datedNote).toList();
 
   /**
    * DiaryProvider 생성자
@@ -170,9 +184,9 @@ class DiaryProvider extends ChangeNotifier {
     // 날짜를 문자열 형식으로 변환
     final dateString = _formatDate(date);
     try {
-      // 날짜별 일기 중에서 해당 날짜와 매치되는 항목 찾기
+      // 날짜별 일기나 날짜 메모 중에서 해당 날짜와 매치되는 항목 찾기
       return _entries.where((entry) => 
-        entry.type == EntryType.dated && entry.date == dateString
+        (entry.type == EntryType.dated || entry.type == EntryType.datedNote) && entry.date == dateString
       ).first;
     } catch (e) {
       // 해당 날짜의 일기가 없으면 null 반환

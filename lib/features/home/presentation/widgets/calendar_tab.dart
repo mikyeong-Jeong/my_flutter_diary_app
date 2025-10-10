@@ -87,10 +87,26 @@ class _CalendarTabState extends State<CalendarTab> {
 
   List<DiaryEntry> _getEntriesForDay(DateTime day, List<DiaryEntry> allEntries) {
     return allEntries.where((entry) {
-      if (entry.type != EntryType.dated || entry.date == null) return false;
+      if ((entry.type != EntryType.dated && entry.type != EntryType.datedNote) || entry.date == null) return false;
       final entryDate = DateTime.parse(entry.date!);
       return isSameDay(entryDate, day);
     }).toList();
+  }
+  
+  bool _hasDiary(DateTime day, List<DiaryEntry> entries) {
+    return entries.any((entry) {
+      if (entry.type != EntryType.dated || entry.date == null) return false;
+      final entryDate = DateTime.parse(entry.date!);
+      return isSameDay(entryDate, day);
+    });
+  }
+  
+  bool _hasDatedNote(DateTime day, List<DiaryEntry> entries) {
+    return entries.any((entry) {
+      if (entry.type != EntryType.datedNote || entry.date == null) return false;
+      final entryDate = DateTime.parse(entry.date!);
+      return isSameDay(entryDate, day);
+    });
   }
 
   void _showYearMonthPicker() {
@@ -261,9 +277,23 @@ class _CalendarTabState extends State<CalendarTab> {
   Widget build(BuildContext context) {
     return Consumer<DiaryProvider>(
       builder: (context, diaryProvider, child) {
-        final entries = diaryProvider.datedEntries;
+        final entries = diaryProvider.entries;
         final selectedDayEntries = _selectedDay != null 
             ? _getEntriesForDay(_selectedDay!, entries)
+            : [];
+        final selectedDayDiaries = _selectedDay != null 
+            ? entries.where((entry) {
+                if (entry.type != EntryType.dated || entry.date == null) return false;
+                final entryDate = DateTime.parse(entry.date!);
+                return isSameDay(entryDate, _selectedDay!);
+              }).toList()
+            : [];
+        final selectedDayNotes = _selectedDay != null 
+            ? entries.where((entry) {
+                if (entry.type != EntryType.datedNote || entry.date == null) return false;
+                final entryDate = DateTime.parse(entry.date!);
+                return isSameDay(entryDate, _selectedDay!);
+              }).toList()
             : [];
 
         return CustomScrollView(
@@ -331,7 +361,11 @@ class _CalendarTabState extends State<CalendarTab> {
                         focusedDay: _focusedDay,
                         calendarFormat: _calendarFormat,
                         selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                        eventLoader: (day) => _getEntriesForDay(day, entries),
+                        eventLoader: (day) {
+                          // 일기(EntryType.dated)가 있을 때만 마커 표시
+                          final hasDiary = _hasDiary(day, entries);
+                          return hasDiary ? [DiaryEntry(title: '', content: '', type: EntryType.dated)] : [];
+                        },
                         startingDayOfWeek: StartingDayOfWeek.sunday,
                         daysOfWeekHeight: 45, // 요일 행 높이 설정
                         daysOfWeekStyle: const DaysOfWeekStyle(
@@ -376,6 +410,39 @@ class _CalendarTabState extends State<CalendarTab> {
                           );
                         },
                         defaultBuilder: (context, day, focusedDay) {
+                          final hasDatedNote = _hasDatedNote(day, entries);
+                          
+                          if (hasDatedNote) {
+                            return Stack(
+                              children: [
+                                // 날짜 메모가 있으면 큰 동그라미 테두리
+                                Positioned.fill(
+                                  child: Container(
+                                    margin: const EdgeInsets.all(2.0),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.orange,
+                                        width: 3.0,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                // 날짜 텍스트
+                                Center(
+                                  child: Text(
+                                    '${day.day}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: day.weekday == DateTime.saturday ? Colors.blue[600] : (day.weekday == DateTime.sunday || _isHoliday(day)) ? Colors.red[600] : null,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                          
+                          // 기본 날짜 표시 (날짜 메모가 없는 경우)
                           return Center(
                             child: Text(
                               '${day.day}',
@@ -387,33 +454,75 @@ class _CalendarTabState extends State<CalendarTab> {
                           );
                         },
                         todayBuilder: (context, day, focusedDay) {
-                          return Container(
-                            margin: const EdgeInsets.all(4.0),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor.withOpacity(0.5),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${day.day}',
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                          final hasDatedNote = _hasDatedNote(day, entries);
+                          
+                          return Stack(
+                            children: [
+                              // 날짜 메모가 있으면 큰 동그라미 테두리
+                              if (hasDatedNote)
+                                Positioned.fill(
+                                  child: Container(
+                                    margin: const EdgeInsets.all(2.0),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.orange,
+                                        width: 3.0,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              // 오늘 날짜 배경
+                              Container(
+                                margin: const EdgeInsets.all(4.0),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor.withOpacity(0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${day.day}',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           );
                         },
                         selectedBuilder: (context, day, focusedDay) {
-                          return Container(
-                            margin: const EdgeInsets.all(4.0),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${day.day}',
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                          final hasDatedNote = _hasDatedNote(day, entries);
+                          
+                          return Stack(
+                            children: [
+                              // 날짜 메모가 있으면 큰 동그라미 테두리
+                              if (hasDatedNote)
+                                Positioned.fill(
+                                  child: Container(
+                                    margin: const EdgeInsets.all(2.0),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.orange,
+                                        width: 3.0,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              // 선택된 날짜 배경
+                              Container(
+                                margin: const EdgeInsets.all(4.0),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${day.day}',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           );
                         },
                       ),
@@ -455,7 +564,7 @@ class _CalendarTabState extends State<CalendarTab> {
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 8.0)),
-            selectedDayEntries.isEmpty
+            (selectedDayDiaries.isEmpty && selectedDayNotes.isEmpty)
                 ? SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
@@ -465,9 +574,9 @@ class _CalendarTabState extends State<CalendarTab> {
                         children: [
                           Icon(Icons.note_add, size: 64, color: Colors.grey[400]),
                           const SizedBox(height: 16),
-                          Text('${DateFormat('M월 d일').format(_selectedDay!)}의 일기가 없습니다', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+                          Text('${DateFormat('M월 d일').format(_selectedDay!)}의 일기와 메모가 없습니다', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
                           const SizedBox(height: 8),
-                          Text('새로운 일기를 작성해보세요', style: TextStyle(fontSize: 14, color: Colors.grey[500])),
+                          Text('새로운 일기나 메모를 작성해보세요', style: TextStyle(fontSize: 14, color: Colors.grey[500])),
                         ],
                       ),
                     ),
@@ -477,56 +586,116 @@ class _CalendarTabState extends State<CalendarTab> {
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
-                          final entry = selectedDayEntries[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12.0),
-                            child: InkWell(
-                              onTap: () => Navigator.pushNamed(context, '/read', arguments: entry),
-                              borderRadius: BorderRadius.circular(12),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            entry.title.isEmpty ? '제목 없음' : entry.title,
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                          ),
-                                        ),
-                                        if (entry.allEmojis.isNotEmpty)
-                                          Wrap(
-                                            spacing: 4,
-                                            children: entry.allEmojis.map<Widget>((emoji) => Text(emoji, style: const TextStyle(fontSize: 20))).toList(),
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(entry.content, style: const TextStyle(fontSize: 14)),
-                                    if (entry.tags.isNotEmpty) ...[
-                                      const SizedBox(height: 8),
-                                      Wrap(
-                                        spacing: 4,
-                                        children: entry.tags.map<Widget>((tag) => Chip(label: Text(tag), materialTapTargetSize: MaterialTapTargetSize.shrinkWrap)).toList(),
-                                      ),
-                                    ],
-                                    const SizedBox(height: 8),
-                                    Text('작성: ${entry.formattedCreatedAt}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
+                          final totalDiaries = selectedDayDiaries.length;
+                          final totalNotes = selectedDayNotes.length;
+                          
+                          if (index < totalDiaries) {
+                            // 일기 카드
+                            final entry = selectedDayDiaries[index];
+                            return _buildDiaryCard(context, entry);
+                          } else {
+                            // 날짜 메모 카드
+                            final noteIndex = index - totalDiaries;
+                            final entry = selectedDayNotes[noteIndex];
+                            return _buildDatedNoteCard(context, entry);
+                          }
                         },
-                        childCount: selectedDayEntries.length,
+                        childCount: selectedDayDiaries.length + selectedDayNotes.length,
                       ),
                     ),
                   ),
           ],
         );
       },
+    );
+  }
+  
+  /// 일기 카드 생성 메서드 (📅 이모지, 파란색 테두리)
+  Widget _buildDiaryCard(BuildContext context, DiaryEntry entry) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Colors.blue, width: 2.0),
+      ),
+      child: InkWell(
+        onTap: () => Navigator.pushNamed(context, '/read', arguments: entry),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text('📆', style: TextStyle(fontSize: 24)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      entry.title.isEmpty ? '제목 없음' : entry.title,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(entry.content, style: const TextStyle(fontSize: 14)),
+              if (entry.tags.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 4,
+                  children: entry.tags.map<Widget>((tag) => Chip(
+                    label: Text(tag, style: const TextStyle(fontSize: 12)),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                  )).toList(),
+                ),
+              ],
+              const SizedBox(height: 8),
+              Text('작성: ${entry.formattedCreatedAt}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  /// 날짜 메모 카드 생성 메서드 (📝 이모지, 주황색 테두리)
+  Widget _buildDatedNoteCard(BuildContext context, DiaryEntry entry) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Colors.orange, width: 2.0),
+      ),
+      child: InkWell(
+        onTap: () => Navigator.pushNamed(context, '/dated_note', arguments: entry),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text('📝', style: TextStyle(fontSize: 24)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      entry.title.isEmpty ? '제목 없음' : entry.title,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(entry.content, style: const TextStyle(fontSize: 14)),
+              const SizedBox(height: 8),
+              Text('작성: ${entry.formattedCreatedAt}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
