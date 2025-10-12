@@ -25,6 +25,7 @@ import 'features/read/presentation/screens/read_screen.dart';
 import 'features/search/presentation/screens/search_screen.dart';
 import 'features/settings/presentation/screens/settings_screen.dart';
 import 'features/write/presentation/screens/dated_note_screen.dart';
+import 'features/read/presentation/screens/dated_note_read_screen.dart';
 
 /**
  * 앱의 메인 함수
@@ -327,11 +328,12 @@ class MyApp extends StatelessWidget {
               '/read': (context) => const ReadScreen(), // 일기 읽기 화면
               '/search': (context) => const SearchScreen(), // 일기 검색 화면
               '/settings': (context) => const SettingsScreen(), // 설정 화면
-              '/dated_note': (context) {
+              '/dated_note': (context) => const DatedNoteReadScreen(), // 할 일 읽기 화면
+              '/write/dated_note': (context) {
                 final args =
                     ModalRoute.of(context)?.settings.arguments as DiaryEntry?;
                 return DatedNoteScreen(entry: args);
-              }, // 날짜별 메모 작성 화면
+              }, // 할 일 편집 화면
             },
           );
         },

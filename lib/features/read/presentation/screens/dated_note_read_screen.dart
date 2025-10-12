@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/models/diary_entry.dart';
 
-/// 일기/메모 읽기 전용 화면
+/// 할 일 읽기 전용 화면
 /// 
-/// 위젯이나 검색 결과에서 일기/메모를 선택했을 때 
-/// 먼저 보여지는 읽기 전용 화면입니다.
-class ReadScreen extends StatelessWidget {
-  const ReadScreen({super.key});
+/// 할 일 항목을 선택했을 때 먼저 보여지는 읽기 전용 화면입니다.
+/// 편집하려면 우상단 편집 버튼을 클릭해야 합니다.
+class DatedNoteReadScreen extends StatelessWidget {
+  const DatedNoteReadScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +15,7 @@ class ReadScreen extends StatelessWidget {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text(entry.type == EntryType.dated ? '일기 보기' : '메모 보기'),
+        title: const Text('할 일 보기'),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -23,7 +23,7 @@ class ReadScreen extends StatelessWidget {
               // 편집 화면으로 이동
               Navigator.pushReplacementNamed(
                 context,
-                '/write',
+                '/write/dated_note',
                 arguments: entry,
               );
             },
@@ -36,8 +36,8 @@ class ReadScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 날짜 표시 (날짜별 일기인 경우)
-            if (entry.type == EntryType.dated && entry.date != null)
+            // 날짜 표시
+            if (entry.date != null)
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12.0,
@@ -47,19 +47,30 @@ class ReadScreen extends StatelessWidget {
                   color: Theme.of(context).primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(16.0),
                 ),
-                child: Text(
-                  DateFormat('yyyy년 M월 d일 EEEE', 'ko_KR')
-                      .format(DateTime.parse(entry.date!)),
-                  style: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      size: 16,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      DateFormat('yyyy년 M월 d일 EEEE', 'ko_KR')
+                          .format(DateTime.parse(entry.date!)),
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             
             const SizedBox(height: 16),
             
-            // 제목
+            // 제목 (있는 경우에만)
             if (entry.title.isNotEmpty) ...[
               Text(
                 entry.title,
@@ -70,57 +81,7 @@ class ReadScreen extends StatelessWidget {
               const SizedBox(height: 16),
             ],
             
-            // 감정 이모지 (날짜별 일기인 경우)
-            if (entry.type == EntryType.dated && 
-                (entry.moods.isNotEmpty || entry.customEmojis.isNotEmpty)) ...[
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 8.0,
-                children: [
-                  ...entry.moods.map((mood) => Container(
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      mood,
-                      style: const TextStyle(fontSize: 24),
-                    ),
-                  )),
-                  ...entry.customEmojis.map((emoji) => Container(
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      emoji,
-                      style: const TextStyle(fontSize: 24),
-                    ),
-                  )),
-                ],
-              ),
-              const SizedBox(height: 16),
-            ],
-            
-            // 태그 (날짜별 일기인 경우)
-            if (entry.type == EntryType.dated && entry.tags.isNotEmpty) ...[
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 8.0,
-                children: entry.tags.map((tag) => Chip(
-                  label: Text(tag),
-                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                  labelStyle: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                  ),
-                )).toList(),
-              ),
-              const SizedBox(height: 16),
-            ],
-            
-            // 본문 내용 (시스템 기본 선택/복사 기능)
+            // 할 일 내용 (시스템 기본 선택/복사 기능)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16.0),
@@ -195,7 +156,7 @@ class ReadScreen extends StatelessWidget {
           // 편집 화면으로 이동
           Navigator.pushReplacementNamed(
             context,
-            '/write',
+            '/write/dated_note',
             arguments: entry,
           );
         },

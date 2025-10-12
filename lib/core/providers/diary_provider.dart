@@ -195,20 +195,27 @@ class DiaryProvider extends ChangeNotifier {
   }
   
   /**
-   * 특정 날짜의 할 일을 조회하는 메서드 (할 일 전용)
+   * 특정 날짜의 할 일들을 조회하는 메서드 (할 일 전용)
    * 
    * @param date : 조회할 날짜
-   * @return DiaryEntry? : 해당 날짜의 할 일 (없으면 null)
+   * @return List<DiaryEntry> : 해당 날짜의 할 일 목록
+   */
+  List<DiaryEntry> getDatedNotesForDate(DateTime date) {
+    final dateString = _formatDate(date);
+    return _entries.where((entry) => 
+      entry.type == EntryType.datedNote && entry.date == dateString
+    ).toList();
+  }
+  
+  /**
+   * 특정 날짜의 할 일을 조회하는 메서드 (할 일 전용) - 하위 호환성을 위해 유지
+   * 
+   * @param date : 조회할 날짜
+   * @return DiaryEntry? : 해당 날짜의 첫 번째 할 일 (없으면 null)
    */
   DiaryEntry? getDatedNoteForDate(DateTime date) {
-    final dateString = _formatDate(date);
-    try {
-      return _entries.where((entry) => 
-        entry.type == EntryType.datedNote && entry.date == dateString
-      ).first;
-    } catch (e) {
-      return null;
-    }
+    final notes = getDatedNotesForDate(date);
+    return notes.isNotEmpty ? notes.first : null;
   }
 
   /**

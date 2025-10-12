@@ -4,10 +4,13 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/models/diary_entry.dart';
 import '../../../../core/providers/diary_provider.dart';
+import '../widgets/toolbar_overlay_manager.dart';
+import '../widgets/interactive_text_field.dart';
+import '../widgets/advanced_rich_text_field.dart';
 
 /// 할 일 작성 화면
 /// 
-/// 특정 날짜에 하나의 할 일만 작성할 수 있는 화면입니다.
+/// 특정 날짜에 여러 개의 할 일을 작성할 수 있는 화면입니다.
 /// 일반 메모와 달리 날짜 선택 기능이 있고, 이모지/태그 기능은 제외됩니다.
 class DatedNoteScreen extends StatefulWidget {
   final DiaryEntry? entry;
@@ -18,10 +21,17 @@ class DatedNoteScreen extends StatefulWidget {
   State<DatedNoteScreen> createState() => _DatedNoteScreenState();
 }
 
-class _DatedNoteScreenState extends State<DatedNoteScreen> {
+class _DatedNoteScreenState extends State<DatedNoteScreen> with WidgetsBindingObserver, KeyboardAwareToolbarMixin {
   late TextEditingController _titleController;
   late TextEditingController _contentController;
   late DateTime _selectedDate;
+  
+  // 포커스 노드들
+  final _titleFocusNode = FocusNode();
+  final _contentFocusNode = FocusNode();
+  
+  // Rich Text 필드에 대한 GlobalKey
+  final _richTextFieldKey = GlobalKey<AdvancedRichTextFieldState>();
   bool _isEditing = false;
   late DiaryEntry _entry;
 
@@ -54,6 +64,8 @@ class _DatedNoteScreenState extends State<DatedNoteScreen> {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
+    _titleFocusNode.dispose();
+    _contentFocusNode.dispose();
     super.dispose();
   }
 
@@ -66,43 +78,18 @@ class _DatedNoteScreenState extends State<DatedNoteScreen> {
       lastDate: DateTime(2030),
     );
     if (picked != null) {
-      // 변경된 날짜의 기존 할 일 확인
-      final diaryProvider = context.read<DiaryProvider>();
-      final existingEntry = diaryProvider.getDatedNoteForDate(picked);
-      
       setState(() {
         _selectedDate = picked;
-        
-        if (existingEntry != null) {
-          // 기존 할 일이 있으면 해당 내용으로 교체
-          _entry = existingEntry;
-          _titleController.text = existingEntry.title;
-          _contentController.text = existingEntry.content;
-          _isEditing = true;
-        } else {
-          // 기존 할 일이 없으면 새 할 일 작성 모드로 초기화
-          _entry = DiaryEntry(
-            date: _formatDate(picked),
-            title: '',
-            content: '',
-            type: EntryType.datedNote,
-          );
-          _titleController.clear();
-          _contentController.clear();
-          _isEditing = false;
-        }
+        // 현재 작성 중인 할 일의 날짜만 업데이트
+        _entry = _entry.copyWith(date: _formatDate(picked));
       });
       
       // 날짜 변경 피드백
-      final message = existingEntry != null 
-          ? '${DateFormat('yyyy년 M월 d일').format(picked)} 할 일을 불러왔습니다'
-          : '${DateFormat('yyyy년 M월 d일').format(picked)}로 새 할 일을 작성합니다';
-      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(message),
+          content: Text('날짜가 ${DateFormat('yyyy년 M월 d일').format(picked)}로 변경되었습니다'),
           duration: const Duration(seconds: 2),
-          backgroundColor: existingEntry != null ? Colors.green : Colors.blue,
+          backgroundColor: Colors.blue,
         ),
       );
     }
@@ -125,42 +112,8 @@ class _DatedNoteScreenState extends State<DatedNoteScreen> {
     final diaryProvider = Provider.of<DiaryProvider>(context, listen: false);
 
     try {
-      // 할 일의 경우 날짜 변경 시 중복 체크
+      // 할 일 저장 - 중복 제한 제거됨
       final currentDate = _formatDate(_selectedDate);
-      
-      // 날짜가 변경되었거나 새 할 일인 경우 중복 체크
-      if (!_isEditing || (_isEditing && _entry.date != currentDate)) {
-        // 같은 날짜의 할 일이 있는지 확인
-        final existingEntry = diaryProvider.getDatedNoteForDate(_selectedDate);
-        
-        // 기존 할 일 편집 시 자기 자신은 제외
-        if (existingEntry != null && existingEntry.id != _entry.id) {
-          final shouldOverwrite = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('이미 작성된 할 일이 있습니다'),
-              content: Text('${DateFormat('yyyy년 M월 d일').format(_selectedDate)}에 이미 할 일이 있습니다.\n덮어쓰시겠습니까?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('취소'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('덮어쓰기'),
-                ),
-              ],
-            ),
-          );
-          
-          if (shouldOverwrite != true) {
-            return;
-          }
-          
-          // 기존 엔트리를 삭제
-          await diaryProvider.deleteEntry(existingEntry.id);
-        }
-      }
 
       final updatedEntry = _entry.copyWith(
         title: _titleController.text.trim(),
@@ -303,6 +256,7 @@ class _DatedNoteScreenState extends State<DatedNoteScreen> {
             // 제목 입력
             TextField(
               controller: _titleController,
+              focusNode: _titleFocusNode,
               decoration: InputDecoration(
                 hintText: '제목 (선택사항)',
                 border: OutlineInputBorder(
@@ -316,8 +270,11 @@ class _DatedNoteScreenState extends State<DatedNoteScreen> {
             const SizedBox(height: 16),
 
             // 내용 입력
-            TextField(
+            AdvancedRichTextField(
+              key: _richTextFieldKey,
               controller: _contentController,
+              focusNode: _contentFocusNode,
+              textStyleState: textStyleState,
               decoration: InputDecoration(
                 hintText: '내용을 입력하세요...',
                 border: OutlineInputBorder(
@@ -369,5 +326,28 @@ class _DatedNoteScreenState extends State<DatedNoteScreen> {
         ),
       ),
     );
+  }
+
+  /// KeyboardAwareToolbarMixin에서 요구하는 현재 활성화된 TextEditingController
+  @override
+  TextEditingController? get currentTextController {
+    // 현재 포커스된 TextField의 컨트롤러 반환
+    if (_titleFocusNode.hasFocus) {
+      return _titleController;
+    } else if (_contentFocusNode.hasFocus) {
+      return _contentController;
+    }
+    // 기본값은 내용 컨트롤러
+    return _contentController;
+  }
+
+  /// 현재 활성화된 Rich Text Field의 GlobalKey 반환
+  @override
+  GlobalKey<AdvancedRichTextFieldState>? get currentRichTextFieldKey {
+    // 내용 필드에 포커스가 있을 때만 Rich Text Field Key 반환
+    if (_contentFocusNode.hasFocus) {
+      return _richTextFieldKey;
+    }
+    return null;
   }
 }

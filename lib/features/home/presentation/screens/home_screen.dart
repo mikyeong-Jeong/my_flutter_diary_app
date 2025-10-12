@@ -218,16 +218,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 할 일 추가 버튼
+                  // 할 일 추가 버튼 (항상 새로운 할 일 작성)
                   SizedBox(
                     width: 56,
                     height: 56,
                     child: FloatingActionButton(
                       heroTag: "dated_note_small",
-                      onPressed: () {
-                        Navigator.pushNamed(
+                      onPressed: () async {
+                        await Navigator.pushNamed(
                           context,
-                          '/dated_note',
+                          '/write/dated_note',
                           arguments: DiaryEntry(
                             date: _formatDate(DateTime.now()),
                             title: '',
@@ -235,6 +235,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             type: EntryType.datedNote,
                           ),
                         );
+                        // 돌아온 후 상태 새로고침
+                        if (mounted) {
+                          setState(() {});
+                        }
                       },
                       backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8),
                       child: const Icon(Icons.calendar_today, size: 28),
@@ -266,30 +270,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             );
           } else {
-            // 할 일 탭: 할 일 추가/편집 버튼
+            // 할 일 탭: 할 일 추가 버튼 (항상 새로운 할 일 작성)
             return FloatingActionButton(
               heroTag: "dated_note_tab",
               onPressed: () async {
                 final today = DateTime.now();
-                // 오늘 날짜의 기존 할 일 확인
-                final existingNote = diaryProvider.getDatedNoteForDate(today);
-                
-                if (existingNote != null) {
-                  // 기존 할 일이 있으면 편집
-                  await Navigator.pushNamed(context, '/dated_note', arguments: existingNote);
-                } else {
-                  // 기존 할 일이 없으면 새로 작성
-                  await Navigator.pushNamed(
-                    context,
-                    '/dated_note',
-                    arguments: DiaryEntry(
-                      date: _formatDate(today),
-                      title: '',
-                      content: '',
-                      type: EntryType.datedNote,
-                    ),
-                  );
-                }
+                // 항상 새로운 할 일 작성 (바로 편집 화면으로)
+                await Navigator.pushNamed(
+                  context,
+                  '/write/dated_note',
+                  arguments: DiaryEntry(
+                    date: _formatDate(today),
+                    title: '',
+                    content: '',
+                    type: EntryType.datedNote,
+                  ),
+                );
                 // 돌아온 후 탭 상태 새로고침
                 if (mounted) {
                   setState(() {});

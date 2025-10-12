@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
 import '../../../../core/utils/text_utils.dart';
+import '../widgets/toolbar_overlay_manager.dart';
+import '../widgets/interactive_text_field.dart';
+import '../widgets/advanced_rich_text_field.dart';
 
 class WriteScreen extends StatefulWidget {
   const WriteScreen({super.key});
@@ -12,11 +15,18 @@ class WriteScreen extends StatefulWidget {
   State<WriteScreen> createState() => _WriteScreenState();
 }
 
-class _WriteScreenState extends State<WriteScreen> {
+class _WriteScreenState extends State<WriteScreen> with WidgetsBindingObserver, KeyboardAwareToolbarMixin {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   final _customTagController = TextEditingController();
   final _customEmojiController = TextEditingController();
+  
+  // 포커스 노드들
+  final _titleFocusNode = FocusNode();
+  final _contentFocusNode = FocusNode();
+  
+  // Rich Text 필드에 대한 GlobalKey
+  final _richTextFieldKey = GlobalKey<AdvancedRichTextFieldState>();
   
   List<String> _selectedMoods = [];
   List<String> _selectedCustomEmojis = [];
@@ -113,6 +123,8 @@ class _WriteScreenState extends State<WriteScreen> {
     _contentController.dispose();
     _customTagController.dispose();
     _customEmojiController.dispose();
+    _titleFocusNode.dispose();
+    _contentFocusNode.dispose();
     super.dispose();
   }
 
@@ -346,6 +358,7 @@ class _WriteScreenState extends State<WriteScreen> {
             // 제목 입력
             TextField(
               controller: _titleController,
+              focusNode: _titleFocusNode,
               decoration: InputDecoration(
                 labelText: '제목${isGeneral ? ' (선택사항)' : ''}',
                 hintText: isGeneral ? '메모 제목을 입력하세요' : '오늘의 일기 제목을 입력하세요',
@@ -360,8 +373,11 @@ class _WriteScreenState extends State<WriteScreen> {
               constraints: const BoxConstraints(
                 minHeight: 300, // 최소 높이 300px로 증가
               ),
-              child: TextField(
+              child: AdvancedRichTextField(
+                key: _richTextFieldKey,
                 controller: _contentController,
+                focusNode: _contentFocusNode,
+                textStyleState: textStyleState,
                 decoration: InputDecoration(
                   labelText: '내용${isGeneral ? ' (선택사항)' : ''}',
                   hintText: isGeneral ? '메모 내용을 입력하세요' : '오늘 하루는 어떠셨나요?',
@@ -559,5 +575,28 @@ class _WriteScreenState extends State<WriteScreen> {
         ),
       ),
     );
+  }
+
+  /// KeyboardAwareToolbarMixin에서 요구하는 현재 활성화된 TextEditingController
+  @override
+  TextEditingController? get currentTextController {
+    // 현재 포커스된 TextField의 컨트롤러 반환
+    if (_titleFocusNode.hasFocus) {
+      return _titleController;
+    } else if (_contentFocusNode.hasFocus) {
+      return _contentController;
+    }
+    // 기본값은 내용 컨트롤러
+    return _contentController;
+  }
+
+  /// 현재 활성화된 Rich Text Field의 GlobalKey 반환
+  @override
+  GlobalKey<AdvancedRichTextFieldState>? get currentRichTextFieldKey {
+    // 내용 필드에 포커스가 있을 때만 Rich Text Field Key 반환
+    if (_contentFocusNode.hasFocus) {
+      return _richTextFieldKey;
+    }
+    return null;
   }
 }

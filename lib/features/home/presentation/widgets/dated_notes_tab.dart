@@ -8,7 +8,7 @@ import '../../../../core/models/diary_entry.dart';
 /// 할 일 탭 위젯
 /// 
 /// 모든 할 일을 목록으로 보여주고 텍스트 검색 기능을 제공하는 탭입니다.
-/// 하루에 하나의 할 일만 작성 가능하며, 제목과 내용을 기준으로 검색할 수 있습니다.
+/// 하루에 여러 개의 할 일을 작성할 수 있으며, 제목과 내용을 기준으로 검색할 수 있습니다.
 class DatedNotesTab extends StatefulWidget {
   const DatedNotesTab({super.key});
 
