@@ -107,9 +107,9 @@ class DiaryProvider extends ChangeNotifier {
   List<DiaryEntry> get diaries => _entries.where((e) => e.type == EntryType.dated).toList();
   
   /**
-   * 날짜별 메모만 필터링하여 반환하는 getter (간단한 텍스트만)
-   * 특정 날짜에 작성된 간단한 메모들만 가져옵니다.
-   * @return List<DiaryEntry> : 날짜별 메모 목록
+   * 할 일만 필터링하여 반환하는 getter (간단한 텍스트만)
+   * 특정 날짜에 작성된 간단한 할 일들만 가져옵니다.
+   * @return List<DiaryEntry> : 할 일 목록
    */
   List<DiaryEntry> get datedNotes => _entries.where((e) => e.type == EntryType.datedNote).toList();
 
@@ -184,12 +184,29 @@ class DiaryProvider extends ChangeNotifier {
     // 날짜를 문자열 형식으로 변환
     final dateString = _formatDate(date);
     try {
-      // 날짜별 일기나 날짜 메모 중에서 해당 날짜와 매치되는 항목 찾기
+      // 날짜별 일기만 찾기 (캘린더 + 버튼용)
       return _entries.where((entry) => 
-        (entry.type == EntryType.dated || entry.type == EntryType.datedNote) && entry.date == dateString
+        entry.type == EntryType.dated && entry.date == dateString
       ).first;
     } catch (e) {
       // 해당 날짜의 일기가 없으면 null 반환
+      return null;
+    }
+  }
+  
+  /**
+   * 특정 날짜의 할 일을 조회하는 메서드 (할 일 전용)
+   * 
+   * @param date : 조회할 날짜
+   * @return DiaryEntry? : 해당 날짜의 할 일 (없으면 null)
+   */
+  DiaryEntry? getDatedNoteForDate(DateTime date) {
+    final dateString = _formatDate(date);
+    try {
+      return _entries.where((entry) => 
+        entry.type == EntryType.datedNote && entry.date == dateString
+      ).first;
+    } catch (e) {
       return null;
     }
   }
@@ -265,8 +282,12 @@ class DiaryProvider extends ChangeNotifier {
       
       // ID로 기존 엔트리를 찾아서 업데이트
       final existingIndex = _entries.indexWhere((e) => e.id == entry.id);
+      
       if (existingIndex != -1) {
         _entries[existingIndex] = entry;
+      } else {
+        // 기존 엔트리가 없으면 새로 추가
+        _entries.add(entry);
       }
       
       // 목록 재정렬 (수정 시간 변경으로 인한 순서 조정)

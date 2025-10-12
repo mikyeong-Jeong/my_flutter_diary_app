@@ -5,7 +5,7 @@
  * - 달력 탭: 월간 캘린더 뷰로 날짜별 일기 확인
  * - 일기 탭: 날짜별 일기 목록 표시
  * - 메모 탭: 일반 메모 목록 관리
- * - 날짜 메모 탭: 날짜별 메모 작성 및 관리
+ * - 할 일 탭: 날짜별 할 일 작성 및 관리
  * 
  * 플로팅 액션 버튼을 통해 탭에 따라 적절한 일기/메모 작성 기능을 제공합니다.
  */
@@ -38,7 +38,7 @@ class HomeScreen extends StatefulWidget {
  * 앱 시작 시 데이터를 로드하고 탭 기반 네비게이션을 관리합니다.
  */
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  /// 네 개 탭(달력, 일기, 메모, 날짜 메모)을 관리하는 컨트롤러
+  /// 네 개 탭(달력, 일기, 메모, 할 일)을 관리하는 컨트롤러
   late TabController _tabController;
   
   /// 메모 탭에서 선택할 특정 메모 ID
@@ -122,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Tab(icon: Icon(Icons.calendar_today), text: '달력'),
             Tab(icon: Icon(Icons.book), text: '일기'),
             Tab(icon: Icon(Icons.note), text: '메모'),
-            Tab(icon: Icon(Icons.event_note), text: '날짜 메모'),
+            Tab(icon: Icon(Icons.event_note), text: '할 일'),
           ],
         ),
       ),
@@ -150,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           final diaryProvider = context.read<DiaryProvider>();
           
           if (selectedIndex == 0 || selectedIndex == 1) {
-            // 달력/일기 탭: 날짜별 메모 추가 + 일반 메모 추가
+            // 달력/일기 탭: 할 일 추가 + 일반 메모 추가
             return Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
               child: Column(
@@ -178,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // 날짜별 메모 추가 버튼 (메인)
+                  // 할 일 추가 버튼 (메인)
                   SizedBox(
                     width: 64,
                     height: 64,
@@ -212,13 +212,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             );
           } else if (selectedIndex == 2) {
-            // 메모 탭: 일반 메모 추가 + 날짜별 메모 추가
+            // 메모 탭: 일반 메모 추가 + 할 일 추가
             return Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 날짜별 메모 추가 버튼
+                  // 할 일 추가 버튼
                   SizedBox(
                     width: 56,
                     height: 56,
@@ -266,27 +266,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             );
           } else {
-            // 날짜 메모 탭: 날짜별 메모 추가/편집 버튼
+            // 할 일 탭: 할 일 추가/편집 버튼
             return FloatingActionButton(
               heroTag: "dated_note_tab",
-              onPressed: () {
+              onPressed: () async {
                 final today = DateTime.now();
-                // 오늘 날짜의 기존 날짜 메모 확인
-                final todayNotes = diaryProvider.datedNotes.where((entry) {
-                  if (entry.date == null) return false;
-                  final entryDate = DateTime.parse(entry.date!);
-                  return entryDate.year == today.year && 
-                         entryDate.month == today.month && 
-                         entryDate.day == today.day;
-                }).toList();
-                final existingNote = todayNotes.isNotEmpty ? todayNotes.first : null;
+                // 오늘 날짜의 기존 할 일 확인
+                final existingNote = diaryProvider.getDatedNoteForDate(today);
                 
                 if (existingNote != null) {
-                  // 기존 메모가 있으면 편집
-                  Navigator.pushNamed(context, '/dated_note', arguments: existingNote);
+                  // 기존 할 일이 있으면 편집
+                  await Navigator.pushNamed(context, '/dated_note', arguments: existingNote);
                 } else {
-                  // 기존 메모가 없으면 새로 작성
-                  Navigator.pushNamed(
+                  // 기존 할 일이 없으면 새로 작성
+                  await Navigator.pushNamed(
                     context,
                     '/dated_note',
                     arguments: DiaryEntry(
@@ -297,9 +290,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   );
                 }
+                // 돌아온 후 탭 상태 새로고침
+                if (mounted) {
+                  setState(() {});
+                }
               },
               child: const Icon(Icons.add),
-              tooltip: '날짜별 메모 작성',
+              tooltip: '할 일 작성',
             );
           }
         },

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
 
-/// 날짜별 메모 탭 위젯
+/// 할 일 탭 위젯
 /// 
-/// 모든 날짜별 메모를 목록으로 보여주고 텍스트 검색 기능을 제공하는 탭입니다.
-/// 하루에 하나의 메모만 작성 가능하며, 제목과 내용을 기준으로 검색할 수 있습니다.
+/// 모든 할 일을 목록으로 보여주고 텍스트 검색 기능을 제공하는 탭입니다.
+/// 하루에 하나의 할 일만 작성 가능하며, 제목과 내용을 기준으로 검색할 수 있습니다.
 class DatedNotesTab extends StatefulWidget {
   const DatedNotesTab({super.key});
 
@@ -42,8 +43,8 @@ class _DatedNotesTabState extends State<DatedNotesTab> {
   Widget build(BuildContext context) {
     return Consumer<DiaryProvider>(
       builder: (context, diaryProvider, child) {
-        // 모든 날짜별 메모 가져오기
-        List<DiaryEntry> datedNotes = diaryProvider.datedNotes;
+        // 모든 할 일 가져오기
+        List<DiaryEntry> datedNotes = List.from(diaryProvider.datedNotes);
         
         // 검색어가 있으면 필터링
         if (_searchQuery.isNotEmpty) {
@@ -93,7 +94,7 @@ class _DatedNotesTabState extends State<DatedNotesTab> {
               ),
             ),
 
-            // 메모 목록 영역
+            // 할 일 목록 영역
             Expanded(
               child: datedNotes.isEmpty
                   ? _buildEmptyState()
@@ -105,7 +106,7 @@ class _DatedNotesTabState extends State<DatedNotesTab> {
     );
   }
 
-  /// 메모가 없을 때의 빈 상태 UI
+  /// 할 일이 없을 때의 빈 상태 UI
   Widget _buildEmptyState() {
     if (_searchQuery.isNotEmpty) {
       // 검색 결과가 없을 때
@@ -138,7 +139,7 @@ class _DatedNotesTabState extends State<DatedNotesTab> {
         ),
       );
     } else {
-      // 메모가 전혀 없을 때
+      // 할 일이 전혀 없을 때
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -150,7 +151,7 @@ class _DatedNotesTabState extends State<DatedNotesTab> {
             ),
             const SizedBox(height: 16),
             Text(
-              '작성된 날짜별 메모가 없습니다',
+              '작성된 할 일이 없습니다',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
@@ -158,7 +159,7 @@ class _DatedNotesTabState extends State<DatedNotesTab> {
             ),
             const SizedBox(height: 8),
             Text(
-              '첫 번째 날짜별 메모를 작성해보세요',
+              '첫 번째 할 일을 작성해보세요',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -170,7 +171,7 @@ class _DatedNotesTabState extends State<DatedNotesTab> {
     }
   }
 
-  /// 메모 목록 UI
+  /// 할 일 목록 UI
   Widget _buildMemoList(List<DiaryEntry> notes) {
     return ListView.builder(
       padding: const EdgeInsets.all(16.0),
@@ -180,8 +181,13 @@ class _DatedNotesTabState extends State<DatedNotesTab> {
         return Card(
           margin: const EdgeInsets.only(bottom: 12.0),
           child: InkWell(
-            onTap: () {
-              Navigator.pushNamed(context, '/dated_note', arguments: note);
+            onTap: () async {
+              // 편집 화면으로 이동하고 결과를 기다림
+              await Navigator.pushNamed(context, '/dated_note', arguments: note);
+              // 돌아온 후 명시적으로 새로고침
+              if (mounted) {
+                setState(() {});
+              }
             },
             borderRadius: BorderRadius.circular(12),
             child: Padding(

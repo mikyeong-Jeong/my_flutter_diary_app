@@ -574,9 +574,9 @@ class _CalendarTabState extends State<CalendarTab> {
                         children: [
                           Icon(Icons.note_add, size: 64, color: Colors.grey[400]),
                           const SizedBox(height: 16),
-                          Text('${DateFormat('M월 d일').format(_selectedDay!)}의 일기와 메모가 없습니다', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+                          Text('${DateFormat('M월 d일').format(_selectedDay!)}의 일기와 할 일이 없습니다', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
                           const SizedBox(height: 8),
-                          Text('새로운 일기나 메모를 작성해보세요', style: TextStyle(fontSize: 14, color: Colors.grey[500])),
+                          Text('새로운 일기나 할 일을 작성해보세요', style: TextStyle(fontSize: 14, color: Colors.grey[500])),
                         ],
                       ),
                     ),
@@ -594,7 +594,7 @@ class _CalendarTabState extends State<CalendarTab> {
                             final entry = selectedDayDiaries[index];
                             return _buildDiaryCard(context, entry);
                           } else {
-                            // 날짜 메모 카드
+                            // 할 일 카드
                             final noteIndex = index - totalDiaries;
                             final entry = selectedDayNotes[noteIndex];
                             return _buildDatedNoteCard(context, entry);
@@ -628,7 +628,7 @@ class _CalendarTabState extends State<CalendarTab> {
             children: [
               Row(
                 children: [
-                  const Text('📆', style: TextStyle(fontSize: 24)),
+                  const Text('🗓️', style: TextStyle(fontSize: 24)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -660,7 +660,7 @@ class _CalendarTabState extends State<CalendarTab> {
     );
   }
   
-  /// 날짜 메모 카드 생성 메서드 (📝 이모지, 주황색 테두리)
+  /// 할 일 카드 생성 메서드 (📝 이모지, 주황색 테두리)
   Widget _buildDatedNoteCard(BuildContext context, DiaryEntry entry) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
