@@ -132,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Tab(icon: Icon(Icons.book), text: '일기'),
             Tab(icon: Icon(Icons.note), text: '메모'),
             Tab(icon: Icon(Icons.event_note), text: '할 일'),
-            Tab(icon: Icon(Icons.calculate), text: '계산기'),
+            Tab(icon: Icon(Icons.calculate), text: '계산'),
           ],
         ),
       ),
