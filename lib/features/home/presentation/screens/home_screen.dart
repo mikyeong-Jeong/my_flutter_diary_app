@@ -25,7 +25,10 @@ import '../widgets/dated_notes_tab.dart';
  * 탭 컨트롤러를 관리하고 앱의 메인 네비게이션을 제공합니다.
  */
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.initialTabIndex = 0});
+
+  /// 처음 표시할 탭 인덱스 (0: 달력, 1: 일기, 2: 메모, 3: 할 일)
+  final int initialTabIndex;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -54,8 +57,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     
-    // 4개 탭을 가진 탭 컨트롤러 초기화
-    _tabController = TabController(length: 4, vsync: this);
+    // 4개 탭을 가진 탭 컨트롤러 초기화 (위젯에서 연 경우 지정된 탭으로 바로 시작)
+    _tabController = TabController(
+      length: 4,
+      vsync: this,
+      initialIndex: widget.initialTabIndex,
+    );
     
     // 탭 변경 시 화면 갱신
     _tabController.addListener(() {

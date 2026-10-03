@@ -130,7 +130,9 @@ lib/features/
 5. **Widget Service** → Updates Android home widgets when needed
 
 ### Deep Link System
-- **Main app navigation**: `main.dart:_handleDeeplink()` handles navigation routing
+- **Routing rules**: `lib/core/navigation/deeplink_router.dart` (`DeeplinkRouter.resolve`) maps a deep link to routes
+- **Cold start**: `main()` reads the pending link via `getDeeplink` before `runApp`, and `MyApp(initialRoutes)` starts directly on the target screen (home stays underneath for back navigation)
+- **Warm start**: `MainActivity.onNewIntent` → `onDeeplink` → `main.dart:_handleDeeplink()`
 - **Widget callbacks**: `backgroundCallback()` processes widget interactions
 - **Method channels**: Communication between native Android and Flutter for widget actions
 - **Supported schemes**: `diaryapp://` with hosts: `home`, `write`, `newentry`, `viewmemo`, `viewdate`
@@ -205,6 +207,7 @@ flutter clean && flutter build apk
 - `test/rich_text_style_manager_test.dart`: style range adjustment on text edits
 - `test/json_utils_test.dart`: backup file encoding (UTF-8 BOM / UTF-16, Korean text preserved)
 - `test/search_screen_test.dart`: search result cards do not overflow on narrow (360dp) screens
+- `test/deeplink_router_test.dart`, `test/widget_deeplink_start_test.dart`: widget deep link routing and direct start on the target screen
 - Focus on testing Provider logic and model serialization
 - Use `flutter test` for unit tests
 - Manual testing recommended for widget functionality

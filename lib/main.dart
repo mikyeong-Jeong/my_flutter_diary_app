@@ -19,6 +19,8 @@ import 'core/providers/diary_provider.dart';
 import 'core/models/diary_entry.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/widget_service.dart';
+import 'core/services/storage_service.dart';
+import 'core/navigation/deeplink_router.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 import 'features/write/presentation/screens/write_screen.dart';
 import 'features/read/presentation/screens/read_screen.dart';
@@ -43,8 +45,12 @@ void main() async {
   // 위젯 콜백을 통한 딥링크 처리 등록
   HomeWidget.registerInteractivityCallback(backgroundCallback);
 
-  // 딥링크 처리를 위한 메서드 채널 설정
+  // 위젯을 눌러 앱이 시작된 경우, 첫 화면을 그리기 전에 딥링크를 확인해
+  // 달력(홈)을 거치지 않고 바로 해당 항목 화면으로 시작
   const platform = MethodChannel('com.diary.app/deeplink');
+  final initialRoutes = await _loadInitialRoutes(platform);
+
+  // 앱 실행 중에 위젯을 누른 경우 (MainActivity.onNewIntent에서 전달)
   platform.setMethodCallHandler((call) async {
     if (call.method == 'onDeeplink' && call.arguments != null) {
       final uri = Uri.parse(call.arguments as String);
@@ -52,159 +58,62 @@ void main() async {
     }
   });
 
-  runApp(const MyApp());
+  runApp(MyApp(initialRoutes: initialRoutes));
 
-  // 앱 시작 시 pending deeplink 확인
+  // 위젯 데이터 업데이트 (SingleMemoWidget 설정 화면용)
   Future.delayed(const Duration(milliseconds: 500), () async {
-    // DiaryProvider 로드를 기다림
     final context = MyApp.navigatorKey.currentContext;
     if (context != null) {
       final diaryProvider = context.read<DiaryProvider>();
       await diaryProvider.loadEntries();
-      // 위젯 데이터 업데이트 (SingleMemoWidget 설정 화면용)
       await widgetService.updateWidget();
-    }
-
-    try {
-      final String? deeplink = await platform.invokeMethod('getDeeplink');
-      if (deeplink != null) {
-        final uri = Uri.parse(deeplink);
-        _handleDeeplink(uri);
-      }
-    } catch (e) {
-      // 에러 무시
     }
   });
 }
 
-/// 위젯에서 앱으로의 딥링크 처리를 위한 백그라운드 콜백
-/// 홈 화면 위젯이나 메모 위젯에서 버튼을 클릭했을 때 호출되는 함수
+/// 앱 시작 시 전달된 딥링크로 초기 화면 목록을 만듦
 ///
-/// @param uri : 위젯에서 전달한 딥링크 URI
-///   - openapp: 앱 열기
-///   - newentry: 새 일기 작성
-///   - viewmemo: 특정 메모 보기
-///   - editmemo: 특정 메모 편집
-///   - write: 일기 작성
-/// 딥링크 처리 함수
-/// MainActivity에서 전달받은 딥링크를 처리합니다.
-void _handleDeeplink(Uri uri) {
-  if (MyApp.navigatorKey.currentState != null) {
-    if (uri.host == 'home') {
-      // 홈 화면의 특정 탭으로 이동
-      final tabIndex = uri.queryParameters['tab'];
-      if (tabIndex != null) {
-        final index = int.tryParse(tabIndex) ?? 0;
-        // 홈 화면으로 이동하면서 탭 인덱스 전달
-        MyApp.navigatorKey.currentState?.pushNamedAndRemoveUntil(
-          '/',
-          (route) => false,
-          arguments: {'tabIndex': index},
-        );
-      }
-    } else if (uri.host == 'viewmemo') {
-      // 메모 보기 - 특정 메모의 상세 화면으로 이동
-      final memoId = uri.queryParameters['id'];
-      if (memoId != null) {
-        // DiaryProvider에서 메모를 찾아서 편집 화면으로 이동
-        final context = MyApp.navigatorKey.currentContext;
-        if (context != null) {
-          final diaryProvider = context.read<DiaryProvider>();
-          try {
-            final entry = diaryProvider.entries.firstWhere(
-              (e) => e.id == memoId,
-            );
+/// 딥링크가 없거나 확인할 수 없으면(웹 등) null을 반환해 기본 홈 화면으로 시작합니다.
+Future<List<RouteSettings>?> _loadInitialRoutes(MethodChannel platform) async {
+  try {
+    final String? deeplink = await platform.invokeMethod('getDeeplink');
+    if (deeplink == null) return null;
 
-            // 읽기 화면으로 이동 (할 일은 전용 읽기 화면)
-            MyApp.navigatorKey.currentState?.pushNamed(
-              entry.type == EntryType.datedNote ? '/dated_note' : '/read',
-              arguments: entry,
-            );
-          } catch (e) {
-            // 메모를 찾을 수 없는 경우 홈 화면으로 이동
-            MyApp.navigatorKey.currentState?.pushNamedAndRemoveUntil(
-              '/',
-              (route) => false,
-              arguments: {'tabIndex': 2}, // 메모 탭으로 이동
-            );
-          }
-        }
-      }
-    } else if (uri.host == 'viewdate') {
-      // 특정 날짜의 일기 보기
-      final date = uri.queryParameters['date'];
-      if (date != null) {
-        final context = MyApp.navigatorKey.currentContext;
-        if (context != null) {
-          final diaryProvider = context.read<DiaryProvider>();
-          // 해당 날짜의 일기 찾기
-          final matches = diaryProvider.entries
-              .where((e) => e.date == date && e.type == EntryType.dated);
+    // 항목을 찾기 위해 저장된 데이터를 미리 로드
+    final entries = await StorageService.instance.loadAllEntries();
+    final routes = DeeplinkRouter.resolve(Uri.parse(deeplink), entries);
+    if (routes.isEmpty) return null;
 
-          if (matches.isNotEmpty) {
-            // 일기가 있으면 읽기 화면으로
-            MyApp.navigatorKey.currentState?.pushNamed(
-              '/read',
-              arguments: matches.first,
-            );
-          } else {
-            // 일기가 없으면 작성 화면으로
-            MyApp.navigatorKey.currentState?.pushNamed(
-              '/write',
-              arguments: DiaryEntry(
-                date: date,
-                title: '',
-                content: '',
-                type: EntryType.dated,
-              ),
-            );
-          }
-        }
-      }
-    } else if (uri.host == 'newentry') {
-      // 일기 위젯의 '새 일기' 버튼 - 오늘 날짜 일기 작성
-      MyApp.navigatorKey.currentState?.pushNamed(
-        '/write',
-        arguments: DiaryEntry(
-          date: _formatDate(DateTime.now()),
-          title: '',
-          content: '',
-          type: EntryType.dated,
-        ),
-      );
-    } else if (uri.host == 'write') {
-      // 새 메모 작성
-      final type = uri.queryParameters['type'];
-      final date = uri.queryParameters['date'];
-
-      if (type == 'general') {
-        // 일반 메모 작성
-        MyApp.navigatorKey.currentState?.pushNamed(
-          '/write',
-          arguments: DiaryEntry(
-            title: '',
-            content: '',
-            type: EntryType.general,
-          ),
-        );
-      } else {
-        // 날짜별 일기 작성
-        MyApp.navigatorKey.currentState?.pushNamed(
-          '/write',
-          arguments: DiaryEntry(
-            date: date ?? _formatDate(DateTime.now()),
-            title: '',
-            content: '',
-            type: EntryType.dated,
-          ),
-        );
-      }
-    }
+    // 뒤로 가기 시 홈으로 돌아갈 수 있도록 항상 홈을 맨 아래에 둠
+    return routes.first.name == '/'
+        ? routes
+        : [const RouteSettings(name: '/'), ...routes];
+  } catch (e) {
+    // 딥링크 채널이 없는 플랫폼(웹 등)이거나 로드 실패 시 기본 시작
+    return null;
   }
 }
 
-String _formatDate(DateTime date) {
-  return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+/// 실행 중인 앱에 전달된 딥링크 처리
+/// MainActivity에서 전달받은 딥링크를 해당 화면으로 이동합니다.
+void _handleDeeplink(Uri uri) {
+  final navigator = MyApp.navigatorKey.currentState;
+  final context = MyApp.navigatorKey.currentContext;
+  if (navigator == null || context == null) return;
+
+  final entries = context.read<DiaryProvider>().entries;
+  final routes = DeeplinkRouter.resolve(uri, entries);
+  if (routes.isEmpty) return;
+
+  var toPush = routes;
+  if (routes.first.name == '/') {
+    // 홈 화면을 새로 열어 지정된 탭으로 이동
+    navigator.pushNamedAndRemoveUntil('/', (route) => false, arguments: routes.first.arguments);
+    toPush = routes.sublist(1);
+  }
+  for (final route in toPush) {
+    navigator.pushNamed(route.name!, arguments: route.arguments);
+  }
 }
 
 @pragma('vm:entry-point')
@@ -266,7 +175,37 @@ class MyApp extends StatelessWidget {
    *
    * @param key : 위젯 식별을 위한 키 (선택사항)
    */
-  const MyApp({super.key});
+  const MyApp({super.key, this.initialRoutes});
+
+  /// 위젯 딥링크로 시작할 때의 초기 화면 목록 (null이면 홈 화면으로 시작)
+  final List<RouteSettings>? initialRoutes;
+
+  /// 앱 내 화면 라우팅 정의
+  static final Map<String, WidgetBuilder> appRoutes = {
+    // 홈 화면 (달력, 일기/메모/할 일 목록) - arguments로 시작 탭 지정 가능
+    '/': (context) => HomeScreen(
+          initialTabIndex: _homeTabFromArguments(ModalRoute.of(context)?.settings.arguments),
+        ),
+    '/write': (context) => const WriteScreen(), // 일기 작성 화면
+    '/read': (context) => const ReadScreen(), // 일기 읽기 화면
+    '/search': (context) => const SearchScreen(), // 일기 검색 화면
+    '/settings': (context) => const SettingsScreen(), // 설정 화면
+    '/dated_note': (context) => const DatedNoteReadScreen(), // 할 일 읽기 화면
+    '/write/dated_note': (context) {
+      final args = ModalRoute.of(context)?.settings.arguments as DiaryEntry?;
+      return DatedNoteScreen(entry: args);
+    }, // 할 일 편집 화면
+  };
+
+  /// 홈 화면 arguments(tabIndex / viewMemoId)에서 시작 탭 인덱스를 계산
+  static int _homeTabFromArguments(Object? arguments) {
+    if (arguments is Map) {
+      if (arguments['viewMemoId'] != null) return 2; // 메모 탭
+      final tabIndex = arguments['tabIndex'];
+      if (tabIndex is int && tabIndex >= 0 && tabIndex < 4) return tabIndex;
+    }
+    return 0;
+  }
 
   // 전역 네비게이터 키 (딥링크 처리용)
   // 위젯에서 앱을 열 때 특정 화면으로 이동하기 위해 사용
@@ -339,18 +278,17 @@ class MyApp extends StatelessWidget {
             initialRoute: '/',
 
             // 앱 내 화면 라우팅 정의
-            routes: {
-              '/': (context) => const HomeScreen(), // 홈 화면 (캘린더, 일기 목록)
-              '/write': (context) => const WriteScreen(), // 일기 작성 화면
-              '/read': (context) => const ReadScreen(), // 일기 읽기 화면
-              '/search': (context) => const SearchScreen(), // 일기 검색 화면
-              '/settings': (context) => const SettingsScreen(), // 설정 화면
-              '/dated_note': (context) => const DatedNoteReadScreen(), // 할 일 읽기 화면
-              '/write/dated_note': (context) {
-                final args =
-                    ModalRoute.of(context)?.settings.arguments as DiaryEntry?;
-                return DatedNoteScreen(entry: args);
-              }, // 할 일 편집 화면
+            routes: appRoutes,
+
+            // 위젯 딥링크로 시작한 경우 홈 위에 대상 화면을 쌓은 상태로 바로 시작
+            onGenerateInitialRoutes: (initialRoute) {
+              final settingsList = initialRoutes ?? [RouteSettings(name: initialRoute)];
+              return settingsList
+                  .map<Route<dynamic>>((settings) => MaterialPageRoute(
+                        settings: settings,
+                        builder: appRoutes[settings.name] ?? appRoutes['/']!,
+                      ))
+                  .toList();
             },
           );
         },

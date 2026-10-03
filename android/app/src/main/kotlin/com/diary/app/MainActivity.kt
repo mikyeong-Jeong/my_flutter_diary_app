@@ -16,12 +16,14 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        handleIntent(intent)
+        // 콜드 스타트: 딥링크를 보관만 하고, Flutter가 첫 화면을 그리기 전에 getDeeplink로 가져감
+        handleIntent(intent, isNewIntent = false)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleIntent(intent)
+        // 앱 실행 중: Flutter로 바로 전달
+        handleIntent(intent, isNewIntent = true)
     }
 
     override fun configureFlutterEngine(flutterEngine: io.flutter.embedding.engine.FlutterEngine) {
@@ -49,15 +51,18 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun handleIntent(intent: Intent?) {
+    private fun handleIntent(intent: Intent?, isNewIntent: Boolean) {
         // 위젯에서 전달된 딥링크 처리
         intent?.data?.let { uri ->
             if (uri.scheme == "diaryapp") {
-                pendingDeeplink = uri.toString()
-                // Flutter 엔진이 준비되면 딥링크 전달
-                flutterEngine?.let { engine ->
+                val engine = flutterEngine
+                if (isNewIntent && engine != null) {
+                    // 실행 중인 앱에 바로 전달 (보관하지 않아 중복 이동 방지)
+                    pendingDeeplink = null
                     MethodChannel(engine.dartExecutor.binaryMessenger, DEEPLINK_CHANNEL)
-                        .invokeMethod("onDeeplink", pendingDeeplink)
+                        .invokeMethod("onDeeplink", uri.toString())
+                } else {
+                    pendingDeeplink = uri.toString()
                 }
                 return
             }
