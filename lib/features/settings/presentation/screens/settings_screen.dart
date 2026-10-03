@@ -87,8 +87,11 @@ class SettingsScreen extends StatelessWidget {
             children: [
               Consumer<DiaryProvider>(
                 builder: (context, diaryProvider, child) {
-                  final entries = diaryProvider.entries;
+                  // 일기 통계는 일기(EntryType.dated)만 대상으로 계산
+                  final entries = diaryProvider.diaries;
                   final totalEntries = entries.length;
+                  final totalDatedNotes = diaryProvider.datedNotes.length;
+                  final totalGeneralNotes = diaryProvider.generalNotes.length;
                   final thisMonth = entries.where((e) {
                     if (e.date == null) return false;
                     final now = DateTime.now();
@@ -115,6 +118,28 @@ class SettingsScreen extends StatelessWidget {
                         title: const Text('이번 달 일기'),
                         trailing: Text(
                           '$thisMonth개',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.event_note),
+                        title: const Text('총 할 일 수'),
+                        trailing: Text(
+                          '$totalDatedNotes개',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.note),
+                        title: const Text('총 메모 수'),
+                        trailing: Text(
+                          '$totalGeneralNotes개',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -453,6 +478,9 @@ class SettingsScreen extends StatelessWidget {
     for (final entry in sortedEntries) {
       final entryDateTime = DateTime.parse(entry.date!);
       final entryDate = DateTime(entryDateTime.year, entryDateTime.month, entryDateTime.day);
+      
+      // 같은 날짜에 여러 항목이 있으면 건너뜀 (연속 기록이 끊긴 것으로 처리되지 않도록)
+      if (entryDate == lastDate) continue;
       
       if (lastDate == null) {
         // 첫 번째 엔트리

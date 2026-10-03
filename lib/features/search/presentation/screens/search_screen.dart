@@ -223,8 +223,15 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
         _availableTags = allTags.toList()..sort();
 
         // 검색 결과 계산
-        final datedResults = _filterEntries(diaryProvider.datedEntries, true);
-        datedResults.sort((a, b) => b.date!.compareTo(a.date!));
+        // 날짜 기반 항목(일기 + 할 일)을 함께 검색
+        final datedResults = _filterEntries(
+          [...diaryProvider.datedEntries, ...diaryProvider.datedNotes],
+          true,
+        );
+        datedResults.sort((a, b) {
+          final dateCompare = b.date!.compareTo(a.date!);
+          return dateCompare != 0 ? dateCompare : DiaryEntry.compareForList(a, b);
+        });
         
         final generalResults = _filterEntries(diaryProvider.generalNotes, false);
         generalResults.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
@@ -235,7 +242,7 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
             bottom: TabBar(
               controller: _tabController,
               tabs: [
-                Tab(text: '날짜별 메모 (${datedResults.length})'),
+                Tab(text: '일기·할 일 (${datedResults.length})'),
                 Tab(text: '일반 메모 (${generalResults.length})'),
               ],
             ),
@@ -568,13 +575,15 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
       itemCount: results.length,
       itemBuilder: (context, index) {
         final entry = results[index];
+        final isDatedNote = entry.type == EntryType.datedNote;
         return Card(
           margin: const EdgeInsets.only(bottom: 12.0),
           child: InkWell(
             onTap: () {
+              // 할 일은 전용 읽기 화면으로 이동
               Navigator.pushNamed(
                 context,
-                '/read',
+                isDatedNote ? '/dated_note' : '/read',
                 arguments: entry,
               );
             },
@@ -590,14 +599,18 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isDated ? Colors.blue[100] : Colors.green[100],
+                          color: isDatedNote
+                              ? Colors.orange[100]
+                              : (isDated ? Colors.blue[100] : Colors.green[100]),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          isDated ? '날짜별' : '일반',
+                          isDatedNote ? '할 일' : (isDated ? '일기' : '일반'),
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDated ? Colors.blue[800] : Colors.green[800],
+                            color: isDatedNote
+                                ? Colors.orange[800]
+                                : (isDated ? Colors.blue[800] : Colors.green[800]),
                             fontWeight: FontWeight.bold,
                           ),
                         ),

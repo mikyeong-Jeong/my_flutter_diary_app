@@ -23,7 +23,7 @@ class ReadScreen extends StatelessWidget {
               // 편집 화면으로 이동
               Navigator.pushReplacementNamed(
                 context,
-                '/write',
+                entry.type == EntryType.datedNote ? '/write/dated_note' : '/write',
                 arguments: entry,
               );
             },

@@ -89,7 +89,6 @@ void main() async {
 /// 딥링크 처리 함수
 /// MainActivity에서 전달받은 딥링크를 처리합니다.
 void _handleDeeplink(Uri uri) {
-  print('🔗 딥링크 처리: ${uri.toString()}'); // 디버깅용 로그
   if (MyApp.navigatorKey.currentState != null) {
     if (uri.host == 'home') {
       // 홈 화면의 특정 탭으로 이동
@@ -116,9 +115,9 @@ void _handleDeeplink(Uri uri) {
               (e) => e.id == memoId,
             );
 
-            // 읽기 화면으로 이동
+            // 읽기 화면으로 이동 (할 일은 전용 읽기 화면)
             MyApp.navigatorKey.currentState?.pushNamed(
-              '/read',
+              entry.type == EntryType.datedNote ? '/dated_note' : '/read',
               arguments: entry,
             );
           } catch (e) {
@@ -126,7 +125,7 @@ void _handleDeeplink(Uri uri) {
             MyApp.navigatorKey.currentState?.pushNamedAndRemoveUntil(
               '/',
               (route) => false,
-              arguments: {'tabIndex': 1}, // 메모 탭으로 이동
+              arguments: {'tabIndex': 2}, // 메모 탭으로 이동
             );
           }
         }
@@ -162,6 +161,17 @@ void _handleDeeplink(Uri uri) {
           }
         }
       }
+    } else if (uri.host == 'newentry') {
+      // 일기 위젯의 '새 일기' 버튼 - 오늘 날짜 일기 작성
+      MyApp.navigatorKey.currentState?.pushNamed(
+        '/write',
+        arguments: DiaryEntry(
+          date: _formatDate(DateTime.now()),
+          title: '',
+          content: '',
+          type: EntryType.dated,
+        ),
+      );
     } else if (uri.host == 'write') {
       // 새 메모 작성
       final type = uri.queryParameters['type'];

@@ -157,18 +157,18 @@ class CalendarWidget : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.tab_memo, memoPendingIntent)
             
-            // 계산기 탭
-            val calculatorIntent = Intent(context, MainActivity::class.java).apply {
+            // 할 일 탭
+            val todoIntent = Intent(context, MainActivity::class.java).apply {
                 data = Uri.parse("diaryapp://home?tab=3")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
-            val calculatorPendingIntent = PendingIntent.getActivity(
+            val todoPendingIntent = PendingIntent.getActivity(
                 context,
                 appWidgetId * 10000 + 3,
-                calculatorIntent,
+                todoIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            views.setOnClickPendingIntent(R.id.tab_calculator, calculatorPendingIntent)
+            views.setOnClickPendingIntent(R.id.tab_todo, todoPendingIntent)
         }
         
         // 앱 열기 버튼
