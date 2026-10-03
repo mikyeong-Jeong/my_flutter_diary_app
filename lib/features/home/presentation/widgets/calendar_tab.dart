@@ -624,6 +624,14 @@ class _CalendarTabState extends State<CalendarTab> {
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                   ),
+                  // 기분 이모지 + 사용자 지정 이모지
+                  if (entry.allEmojis.isNotEmpty)
+                    Wrap(
+                      spacing: 4,
+                      children: entry.allEmojis
+                          .map<Widget>((emoji) => Text(emoji, style: const TextStyle(fontSize: 20)))
+                          .toList(),
+                    ),
                 ],
               ),
               const SizedBox(height: 8),
