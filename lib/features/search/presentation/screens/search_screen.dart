@@ -666,56 +666,45 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                     ),
                   ],
                   const SizedBox(height: 8),
-                  // 날짜 정보 (개선됨)
-                  Row(
+                  // 날짜 정보 - 한 줄에 들어가지 않으면 오른쪽 텍스트를 다음 줄로 내림 (오버플로 방지)
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
-                      if (isDated) ...[
-                        Icon(
-                          Icons.calendar_today,
-                          size: 14,
-                          color: Colors.blue[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '날짜: ${entry.formattedDate}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.blue[600],
-                            fontWeight: FontWeight.w500,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isDated ? Icons.calendar_today : Icons.create,
+                            size: 14,
+                            color: isDated ? Colors.blue[600] : Colors.green[600],
                           ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          '작성: ${entry.formattedCreatedAt}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              isDated
+                                  ? '날짜: ${entry.formattedDate}'
+                                  : '생성: ${entry.formattedCreatedAt}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDated ? Colors.blue[600] : Colors.green[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
+                        ],
+                      ),
+                      Text(
+                        isDated
+                            ? '작성: ${entry.formattedCreatedAt}'
+                            : '수정: ${entry.formattedUpdatedAt}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[600],
                         ),
-                      ] else ...[
-                        Icon(
-                          Icons.create,
-                          size: 14,
-                          color: Colors.green[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '생성: ${entry.formattedCreatedAt}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.green[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          '수정: ${entry.formattedUpdatedAt}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
+                      ),
                     ],
                   ),
                 ],

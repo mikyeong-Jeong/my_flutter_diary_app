@@ -204,6 +204,7 @@ flutter clean && flutter build apk
 - `test/diary_provider_test.dart`: Provider CRUD with mocked `path_provider` / `home_widget` channels
 - `test/rich_text_style_manager_test.dart`: style range adjustment on text edits
 - `test/json_utils_test.dart`: backup file encoding (UTF-8 BOM / UTF-16, Korean text preserved)
+- `test/search_screen_test.dart`: search result cards do not overflow on narrow (360dp) screens
 - Focus on testing Provider logic and model serialization
 - Use `flutter test` for unit tests
 - Manual testing recommended for widget functionality
