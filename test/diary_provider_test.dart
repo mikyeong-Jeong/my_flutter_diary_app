@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:diary_app/core/models/diary_entry.dart';
 import 'package:diary_app/core/providers/diary_provider.dart';
+import 'package:diary_app/core/utils/json_utils.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -99,5 +101,32 @@ void main() {
 
     expect(provider.datedNotes, isEmpty);
     expect((await createProvider()).datedNotes, isEmpty);
+  });
+
+  test('백업 파일로 내보낸 뒤 복원해도 한글과 이모지가 깨지지 않는다', () async {
+    final provider = await createProvider();
+    await provider.addEntry(DiaryEntry(
+      date: '2026-10-03',
+      title: '한글 제목',
+      content: '오늘은 맑음 ☀️\n□ 할 일',
+      moods: ['😊'],
+      tags: ['일상'],
+    ));
+
+    // 설정 화면과 동일한 경로: 내보내기 → UTF-8(BOM) 파일 바이트 → 읽기 → 복원
+    final backup = await provider.exportBackup();
+    final bytes = JsonUtils.toUtf8Bytes(backup, includeBom: true);
+    await provider.deleteAllEntries();
+    expect(provider.entries, isEmpty);
+
+    final restoredJson = jsonEncode(JsonUtils.decodeFromBytes(bytes));
+    await provider.importBackup(restoredJson);
+
+    final reloaded = await createProvider();
+    final entry = reloaded.diaries.single;
+    expect(entry.title, '한글 제목');
+    expect(entry.content, '오늘은 맑음 ☀️\n□ 할 일');
+    expect(entry.moods, ['😊']);
+    expect(entry.tags, ['일상']);
   });
 }

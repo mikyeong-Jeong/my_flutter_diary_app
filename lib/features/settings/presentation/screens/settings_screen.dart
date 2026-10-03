@@ -1026,7 +1026,11 @@ class SettingsScreen extends StatelessWidget {
                   try {
                     final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
                     if (clipboardData != null && clipboardData.text != null) {
-                      final backupData = clipboardData.text!;
+                      // 파일 내용을 복사하면서 딸려온 BOM(\uFEFF)과 앞뒤 공백 제거
+                      var backupData = clipboardData.text!.trim();
+                      if (backupData.startsWith('\uFEFF')) {
+                        backupData = backupData.substring(1);
+                      }
                       
                       // 백업 데이터 유효성 검사
                       try {

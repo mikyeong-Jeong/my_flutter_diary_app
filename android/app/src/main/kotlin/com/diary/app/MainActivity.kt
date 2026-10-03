@@ -94,8 +94,9 @@ class MainActivity : FlutterActivity() {
     private fun handleFileUri(uri: Uri) {
         try {
             contentResolver.openInputStream(uri)?.use { inputStream ->
-                BufferedReader(InputStreamReader(inputStream)).use { reader ->
-                    sharedData = reader.readText()
+                // 백업 파일은 UTF-8(BOM 포함)로 저장되므로 인코딩을 명시하고 BOM 제거
+                BufferedReader(InputStreamReader(inputStream, Charsets.UTF_8)).use { reader ->
+                    sharedData = reader.readText().removePrefix("\uFEFF")
                 }
             }
         } catch (e: Exception) {
