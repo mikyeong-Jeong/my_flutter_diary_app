@@ -179,6 +179,11 @@ class _DatedNotesTabState extends State<DatedNotesTab> {
         final note = notes[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 12.0),
+          // 메모 탭과 동일한 테두리 윤곽선
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Theme.of(context).dividerColor),
+          ),
           child: InkWell(
             onTap: () async {
               // 편집 화면으로 이동하고 결과를 기다림
@@ -214,26 +219,18 @@ class _DatedNotesTabState extends State<DatedNotesTab> {
                   ),
                   const SizedBox(height: 8),
                   
-                  // 제목
-                  if (note.title.isNotEmpty) ...[
-                    Text(
-                      note.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                  // 목록에는 제목만 표시 (내용은 할 일을 열어서 확인)
+                  Text(
+                    note.title.isNotEmpty ? note.title : '제목 없음',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: note.title.isNotEmpty ? null : Colors.grey[600],
                     ),
-                    const SizedBox(height: 8),
-                  ],
-                  
-                  // 내용 (전체)
-                  if (note.content.isNotEmpty) ...[
-                    Text(
-                      note.content,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
+                  ),
+                  const SizedBox(height: 8),
                   
                   // 메타 정보
                   Row(
