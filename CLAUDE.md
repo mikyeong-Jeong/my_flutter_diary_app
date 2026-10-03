@@ -72,7 +72,8 @@ Test widget functionality using ADB commands:
 adb shell am broadcast -a android.appwidget.action.APPWIDGET_UPDATE
 
 # Test deep links from widget
-adb shell am start -W -a android.intent.action.VIEW -d "diaryapp://write?type=general"
+# (매니페스트에 diaryapp 스킴 intent-filter가 없으므로 -n으로 액티비티를 직접 지정)
+adb shell am start -W -a android.intent.action.VIEW -n com.diary.app/.MainActivity -d "diaryapp://write?type=general"
 ```
 
 ## Architecture
@@ -96,6 +97,8 @@ adb shell am start -W -a android.intent.action.VIEW -d "diaryapp://write?type=ge
 
 #### Data Models
 - `DiaryEntry`: Core data model with JSON serialization
+  - `EntryType`: `dated` (diary), `general` (memo), `datedNote` (to-do, no emoji/tags)
+  - `DiaryEntry.compareForList`: shared sort order (diary → to-do → memo)
 - `AppSettings`: App configuration and preferences
 - Uses `json_annotation` and `build_runner` for code generation
 
@@ -112,9 +115,9 @@ Located in `android/app/src/main/kotlin/com/diary/app/`:
 ### Feature Structure
 ```
 lib/features/
-├── home/        # Calendar, entry list, memo tab, calculator tab
-├── write/       # Diary/memo creation and editing
-├── read/        # Diary reading screen
+├── home/        # Calendar, diary list, memo tab, to-do (dated note) tab
+├── write/       # Diary/memo/to-do creation and editing (checkbox toolbar)
+├── read/        # Diary and to-do reading screens
 ├── search/      # Search and filtering functionality  
 ├── settings/    # Backup, statistics, theme settings
 ```
@@ -130,7 +133,7 @@ lib/features/
 - **Main app navigation**: `main.dart:_handleDeeplink()` handles navigation routing
 - **Widget callbacks**: `backgroundCallback()` processes widget interactions
 - **Method channels**: Communication between native Android and Flutter for widget actions
-- **Supported schemes**: `diaryapp://` with hosts: `home`, `write`, `viewmemo`, `viewdate`
+- **Supported schemes**: `diaryapp://` with hosts: `home`, `write`, `newentry`, `viewmemo`, `viewdate`
 
 ## Development Guidelines
 
@@ -197,7 +200,9 @@ flutter clean && flutter build apk
 - `permission_handler ^12.0.1` - Android permissions
 
 ## Testing
-- Entry point: `test/widget_test.dart`
+- `test/diary_entry_test.dart`: model serialization and sort order
+- `test/diary_provider_test.dart`: Provider CRUD with mocked `path_provider` / `home_widget` channels
+- `test/rich_text_style_manager_test.dart`: style range adjustment on text edits
 - Focus on testing Provider logic and model serialization
 - Use `flutter test` for unit tests
 - Manual testing recommended for widget functionality

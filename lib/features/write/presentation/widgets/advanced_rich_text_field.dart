@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'rich_text_style_manager.dart';
 import 'text_style_state.dart';
 
@@ -59,35 +58,33 @@ class AdvancedRichTextFieldState extends State<AdvancedRichTextField> {
   /// 텍스트 변경 이벤트 처리
   void _onTextChanged() {
     final currentText = widget.controller.text;
-    
-    if (currentText != _previousText) {
-      final selection = widget.controller.selection;
-      
-      if (selection.isValid) {
-        int changeStart = selection.baseOffset;
-        int oldLength = _previousText.length;
-        int newLength = currentText.length;
-        
-        // 텍스트 추가된 경우 (새로 입력된 텍스트)
-        if (newLength > oldLength) {
-          int addedLength = newLength - oldLength;
-          int insertStart = changeStart - addedLength;
-          
-          // 새로 입력된 텍스트에 현재 툴바 스타일 적용
-          if (insertStart >= 0 && addedLength > 0) {
-            _applyCurrentStyleToNewText(insertStart, insertStart + addedLength);
-          }
-        }
-        
-        // 텍스트 변경 시 스타일 범위 조정
-        _styleManager.adjustRangesForTextChange(changeStart, oldLength, newLength);
-      }
-      
-      // 체크박스 상태 업데이트
-      _updateCheckboxStyle(currentText);
-      
-      _previousText = currentText;
+    if (currentText == _previousText) return;
+
+    // 이전/현재 텍스트의 공통 앞부분·뒷부분을 제외한 실제 변경 구간 계산
+    final oldText = _previousText;
+    final minLength = oldText.length < currentText.length ? oldText.length : currentText.length;
+    int prefix = 0;
+    while (prefix < minLength && oldText.codeUnitAt(prefix) == currentText.codeUnitAt(prefix)) {
+      prefix++;
     }
+    int suffix = 0;
+    while (suffix < minLength - prefix &&
+        oldText.codeUnitAt(oldText.length - 1 - suffix) ==
+            currentText.codeUnitAt(currentText.length - 1 - suffix)) {
+      suffix++;
+    }
+    final removedLength = oldText.length - prefix - suffix;
+    final insertedLength = currentText.length - prefix - suffix;
+
+    // 기존 스타일 범위를 변경 구간에 맞춰 이동/축소한 뒤
+    _styleManager.adjustRangesForTextChange(prefix, removedLength, insertedLength);
+
+    // 새로 입력된 텍스트에 현재 툴바 스타일 적용
+    if (insertedLength > 0) {
+      _applyCurrentStyleToNewText(prefix, prefix + insertedLength);
+    }
+
+    _previousText = currentText;
   }
   
   /// 새로 입력된 텍스트에 현재 스타일 적용
@@ -121,7 +118,7 @@ class AdvancedRichTextFieldState extends State<AdvancedRichTextField> {
   void _handleTap() {
     Future.delayed(const Duration(milliseconds: 50), () {
       final selection = widget.controller.selection;
-      if (selection.isValid) {
+      if (selection.isValid && selection.isCollapsed) {
         _checkAndToggleCheckbox(selection.baseOffset);
       }
     });
@@ -132,24 +129,8 @@ class AdvancedRichTextFieldState extends State<AdvancedRichTextField> {
     final text = widget.controller.text;
     if (text.isEmpty) return;
 
-    // 클릭한 위치에서 체크박스 문자 확인
-    if (offset >= 0 && offset < text.length) {
-      final char = text[offset];
-      
-      // 빈 체크박스(□) 클릭 시
-      if (char == '□') {
-        _toggleCheckboxAtPosition(offset, '■');
-        return;
-      }
-      
-      // 체크된 체크박스(■) 클릭 시  
-      if (char == '■') {
-        _toggleCheckboxAtPosition(offset, '□');
-        return;
-      }
-    }
-    
-    // 체크박스 바로 뒤 공백 클릭 시도 체크
+    // 체크박스 글자(□/■)의 오른쪽 절반을 탭해 커서가 '체크박스|공백' 사이에 놓인 경우에만 토글
+    // (체크박스 왼쪽 = 줄 맨 앞으로 커서를 옮기는 탭은 토글하지 않음)
     if (offset >= 1 && offset < text.length) {
       final prevChar = text[offset - 1];
       if ((prevChar == '□' || prevChar == '■') && text[offset] == ' ') {
@@ -212,51 +193,6 @@ class AdvancedRichTextFieldState extends State<AdvancedRichTextField> {
         );
       },
     );
-  }
-
-  /// RichText 기능 비활성화 - 단순한 체크박스만 지원
-  Widget _buildStyledRichText() {
-    // 더 이상 사용하지 않음
-    return const SizedBox.shrink();
-  }
-
-  /// TextSpan 기능 비활성화 - 단순한 체크박스만 지원
-  List<TextSpan> _buildLineBasedTextSpans(String text) {
-    // 더 이상 사용하지 않음
-    return [];
-  }
-
-  /// TextField의 동적 패딩 계산 (호환성을 위해 유지)
-  EdgeInsets _calculateTextFieldPadding() {
-    return _getTextFieldPadding();
-  }
-  
-  /// TextField의 패딩 계산 (RichText와 동기화용)
-  EdgeInsets _getTextFieldPadding() {
-    final decoration = widget.decoration;
-    
-    // 명시적 contentPadding이 있으면 사용
-    if (decoration?.contentPadding != null) {
-      return decoration!.contentPadding! as EdgeInsets;
-    }
-    
-    // 기본 Flutter TextField 패딩
-    final border = decoration?.border;
-    if (border is OutlineInputBorder) {
-      return const EdgeInsets.symmetric(horizontal: 12.0, vertical: 16.0);
-    } else if (border is UnderlineInputBorder) {
-      return const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0);
-    } else {
-      // 기본값
-      return const EdgeInsets.symmetric(horizontal: 12.0, vertical: 16.0);
-    }
-  }
-
-
-  /// 체크박스 상태 업데이트 (RichText 방식에서는 불필요)
-  void _updateCheckboxStyle(String text) {
-    // RichText 방식에서는 줄별로 자동 처리되므로 별도 업데이트 불필요
-    // 향후 호환성을 위해 메서드는 유지
   }
 
   /// 외부에서 스타일 적용을 위한 메서드

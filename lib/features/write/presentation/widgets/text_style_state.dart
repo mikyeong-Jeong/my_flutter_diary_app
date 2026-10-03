@@ -134,57 +134,6 @@ class TextStyleState extends ChangeNotifier {
     notifyListeners();
   }
   
-  /// 체크박스 토글 기능 (별도 메서드로 분리)
-  /// 특정 위치의 체크박스를 토글합니다.
-  void toggleCheckboxAt(TextEditingController controller, int position) {
-    final currentText = controller.text;
-    
-    // 해당 위치가 포함된 줄 찾기
-    int lineStart = currentText.lastIndexOf('\n', position) + 1;
-    int lineEnd = currentText.indexOf('\n', lineStart);
-    if (lineEnd == -1) lineEnd = currentText.length;
-    
-    if (lineStart >= currentText.length) return;
-    
-    String lineText = currentText.substring(lineStart, lineEnd);
-    String newText;
-    
-    if (lineText.startsWith('□ ')) {
-      // 빈 체크박스를 체크됨으로 변경
-      newText = currentText.replaceRange(lineStart, lineStart + 2, '■ ');
-    } else if (lineText.startsWith('■ ')) {
-      // 체크된 박스를 빈 박스로 변경
-      newText = currentText.replaceRange(lineStart, lineStart + 2, '□ ');
-    } else {
-      // 체크박스가 없는 줄이면 아무것도 하지 않음
-      return;
-    }
-    
-    controller.value = TextEditingValue(
-      text: newText,
-      selection: controller.selection,
-    );
-    
-    notifyListeners();
-  }
-  
-  /// 텍스트 내 체크된 체크박스 존재 여부에 따라 취소선 상태 업데이트
-  void _updateLineThroughState(String text) {
-    // 체크된 체크박스(☑)가 하나라도 있으면 취소선 활성화
-    _isLineThrough = text.contains('☑ ');
-  }
-  
-  /// 외부에서 체크박스 상태 업데이트 (AdvancedRichTextField에서 사용)
-  void updateLineThroughFromText(String text) {
-    final wasLineThrough = _isLineThrough;
-    _updateLineThroughState(text);
-    
-    // 상태가 변경된 경우에만 알림
-    if (wasLineThrough != _isLineThrough) {
-      notifyListeners();
-    }
-  }
-  
   /// 선택된 텍스트에 현재 스타일 적용
   /// Rich Text 지원 시 사용할 수 있는 메서드
   void applyStyleToSelection(TextEditingController controller, {

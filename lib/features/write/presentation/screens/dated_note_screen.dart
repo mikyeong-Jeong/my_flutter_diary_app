@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/models/diary_entry.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../widgets/toolbar_overlay_manager.dart';
-import '../widgets/interactive_text_field.dart';
 import '../widgets/advanced_rich_text_field.dart';
 
 /// 할 일 작성 화면

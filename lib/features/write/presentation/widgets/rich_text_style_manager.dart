@@ -330,8 +330,12 @@ class RichTextStyleManager extends ChangeNotifier {
   }
 
   /// 텍스트 변경 시 스타일 범위 조정
+  ///
+  /// [changeStart] 위치에서 [oldLength]만큼의 텍스트가 [newLength]만큼의 텍스트로 바뀌었을 때
+  /// 각 스타일 범위를 이동하거나 축소합니다. 범위 안쪽에 입력된 텍스트는 해당 스타일을 이어받습니다.
   void adjustRangesForTextChange(int changeStart, int oldLength, int newLength) {
-    int delta = newLength - oldLength;
+    final delta = newLength - oldLength;
+    final changeEnd = changeStart + oldLength;
     
     List<TextStyleRange> adjustedRanges = [];
     
@@ -339,19 +343,22 @@ class RichTextStyleManager extends ChangeNotifier {
       if (range.end <= changeStart) {
         // 변경 지점 이전의 범위는 그대로 유지
         adjustedRanges.add(range);
-      } else if (range.start >= changeStart + oldLength) {
+      } else if (range.start >= changeEnd) {
         // 변경 지점 이후의 범위는 오프셋 조정
         adjustedRanges.add(range.copyWith(
           start: range.start + delta,
           end: range.end + delta,
         ));
       } else {
-        // 변경 지점과 겹치는 범위는 복잡한 처리 필요
-        if (range.start < changeStart) {
-          // 앞부분만 유지
-          adjustedRanges.add(range.copyWith(end: changeStart));
+        // 변경 구간과 겹치는 범위: 남는 앞부분/뒷부분만 유지
+        final newStart = range.start < changeStart ? range.start : changeStart + newLength;
+        final newEnd = range.end > changeEnd ? range.end + delta : changeStart;
+        if (range.start < changeStart && range.end > changeEnd) {
+          // 범위 내부에서 편집된 경우 전체 범위 유지 (입력된 텍스트도 같은 스타일)
+          adjustedRanges.add(range.copyWith(end: range.end + delta));
+        } else if (newStart < newEnd) {
+          adjustedRanges.add(range.copyWith(start: newStart, end: newEnd));
         }
-        // 겹치는 부분은 삭제됨
       }
     }
     

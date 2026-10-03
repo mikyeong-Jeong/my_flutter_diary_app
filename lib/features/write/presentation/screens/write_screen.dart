@@ -5,7 +5,6 @@ import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
 import '../../../../core/utils/text_utils.dart';
 import '../widgets/toolbar_overlay_manager.dart';
-import '../widgets/interactive_text_field.dart';
 import '../widgets/advanced_rich_text_field.dart';
 
 class WriteScreen extends StatefulWidget {

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'custom_toolbar.dart';
 import 'text_style_state.dart';
 import 'advanced_rich_text_field.dart';
-import 'rich_text_style_manager.dart';
 
 /// 툴바 오버레이 위치 관리 클래스
 /// 
@@ -26,9 +25,6 @@ class ToolbarOverlayManager {
   
   /// 툴바 표시 여부
   bool _isVisible = false;
-  
-  /// 키보드 높이 감지를 위한 리스너
-  VoidCallback? _keyboardListener;
 
   /// 싱글톤 인스턴스
   static final ToolbarOverlayManager _instance = ToolbarOverlayManager._internal();
@@ -66,10 +62,7 @@ class ToolbarOverlayManager {
     );
     
     // 오버레이에 툴바 추가
-    Overlay.of(context)?.insert(_overlayEntry!);
-    
-    // 키보드 높이 변화 감지 리스너 등록
-    _setupKeyboardListener();
+    Overlay.of(context).insert(_overlayEntry!);
   }
 
   /// 툴바 오버레이 숨김
@@ -77,7 +70,6 @@ class ToolbarOverlayManager {
     _overlayEntry?.remove();
     _overlayEntry = null;
     _isVisible = false;
-    _keyboardListener = null;
     
     // 리소스 정리
     _context = null;
@@ -150,23 +142,6 @@ class ToolbarOverlayManager {
     }
   }
 
-  /// 키보드 높이 변화 감지 리스너 설정
-  void _setupKeyboardListener() {
-    if (_context == null) return;
-    
-    // MediaQuery 변화를 감지하여 툴바 위치 업데이트
-    _keyboardListener = () {
-      if (_overlayEntry != null && _context != null) {
-        // 키보드 높이가 변경되면 오버레이 재구성
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_overlayEntry != null) {
-            _overlayEntry!.markNeedsBuild();
-          }
-        });
-      }
-    };
-  }
-  
   /// 키보드 높이 변화 감지 시 호출 (Mixin에서 사용)
   void onKeyboardHeightChanged() {
     if (_overlayEntry != null && _context != null) {

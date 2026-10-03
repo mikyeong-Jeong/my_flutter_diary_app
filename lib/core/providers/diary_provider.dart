@@ -326,7 +326,6 @@ class DiaryProvider extends ChangeNotifier {
 
   Future<void> deleteEntry(String id) async {
     try {
-      final entry = _entries.firstWhere((e) => e.id == id);
       await StorageService.instance.deleteEntry(id);
       _entries.removeWhere((entry) => entry.id == id);
       _applyFilters();

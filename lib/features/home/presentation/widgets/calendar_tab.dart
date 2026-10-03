@@ -85,14 +85,6 @@ class _CalendarTabState extends State<CalendarTab> {
     return _calendarService.isHoliday(day);
   }
 
-  List<DiaryEntry> _getEntriesForDay(DateTime day, List<DiaryEntry> allEntries) {
-    return allEntries.where((entry) {
-      if ((entry.type != EntryType.dated && entry.type != EntryType.datedNote) || entry.date == null) return false;
-      final entryDate = DateTime.parse(entry.date!);
-      return isSameDay(entryDate, day);
-    }).toList();
-  }
-  
   bool _hasDiary(DateTime day, List<DiaryEntry> entries) {
     return entries.any((entry) {
       if (entry.type != EntryType.dated || entry.date == null) return false;
@@ -278,9 +270,6 @@ class _CalendarTabState extends State<CalendarTab> {
     return Consumer<DiaryProvider>(
       builder: (context, diaryProvider, child) {
         final entries = diaryProvider.entries;
-        final selectedDayEntries = _selectedDay != null 
-            ? _getEntriesForDay(_selectedDay!, entries)
-            : [];
         final selectedDayDiaries = _selectedDay != null 
             ? entries.where((entry) {
                 if (entry.type != EntryType.dated || entry.date == null) return false;
@@ -587,7 +576,6 @@ class _CalendarTabState extends State<CalendarTab> {
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final totalDiaries = selectedDayDiaries.length;
-                          final totalNotes = selectedDayNotes.length;
                           
                           if (index < totalDiaries) {
                             // 일기 카드
