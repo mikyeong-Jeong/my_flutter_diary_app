@@ -122,9 +122,10 @@ class _GeneralNotesTabState extends State<GeneralNotesTab> {
               margin: const EdgeInsets.only(bottom: 12.0),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
+                // 기본 테두리 윤곽선, 선택된 메모는 강조 색상
                 border: Border.all(
-                  color: isSelected ? Theme.of(context).primaryColor : Colors.transparent,
-                  width: isSelected ? 2 : 0,
+                  color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).dividerColor,
+                  width: isSelected ? 2 : 1,
                 ),
                 boxShadow: isSelected ? [
                   BoxShadow(
@@ -146,31 +147,18 @@ class _GeneralNotesTabState extends State<GeneralNotesTab> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 제목과 이모지
-                      Row(
-                        children: [
-                          Expanded(
-                            child: note.title.isNotEmpty
-                                ? Text(
-                                    note.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  )
-                                : const SizedBox.shrink(),
-                          ),
-                        ],
-                      ),
-                      if (note.title.isNotEmpty) const SizedBox(height: 8),
-                      // 전체 내용 표시
-                      if (note.content.isNotEmpty) ...[
-                        Text(
-                          note.content,
-                          style: const TextStyle(fontSize: 14),
+                      // 목록에는 제목만 표시 (내용은 메모를 열어서 확인)
+                      Text(
+                        note.title.isNotEmpty ? note.title : '제목 없음',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: note.title.isNotEmpty ? null : Colors.grey[600],
                         ),
-                        const SizedBox(height: 8),
-                      ],
+                      ),
+                      const SizedBox(height: 8),
                       // 생성/수정 시간
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
