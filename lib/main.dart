@@ -16,6 +16,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:home_widget/home_widget.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/providers/diary_provider.dart';
+import 'core/providers/calculator_provider.dart';
+import 'core/models/calculator_sheet.dart';
 import 'core/models/diary_entry.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/widget_service.dart';
@@ -28,6 +30,7 @@ import 'features/search/presentation/screens/search_screen.dart';
 import 'features/settings/presentation/screens/settings_screen.dart';
 import 'features/write/presentation/screens/dated_note_screen.dart';
 import 'features/read/presentation/screens/dated_note_read_screen.dart';
+import 'features/calculator/presentation/screens/calculator_sheet_screen.dart';
 
 /**
  * 앱의 메인 함수
@@ -195,6 +198,9 @@ class MyApp extends StatelessWidget {
       final args = ModalRoute.of(context)?.settings.arguments as DiaryEntry?;
       return DatedNoteScreen(entry: args);
     }, // 할 일 편집 화면
+    '/calculator': (context) => CalculatorSheetScreen(
+          sheet: ModalRoute.of(context)?.settings.arguments as CalculatorSheet?,
+        ), // 계산 작성/수정 화면
   };
 
   /// 홈 화면 arguments(tabIndex / viewMemoId)에서 시작 탭 인덱스를 계산
@@ -202,7 +208,7 @@ class MyApp extends StatelessWidget {
     if (arguments is Map) {
       if (arguments['viewMemoId'] != null) return 2; // 메모 탭
       final tabIndex = arguments['tabIndex'];
-      if (tabIndex is int && tabIndex >= 0 && tabIndex < 4) return tabIndex;
+      if (tabIndex is int && tabIndex >= 0 && tabIndex < 5) return tabIndex;
     }
     return 0;
   }
@@ -240,6 +246,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         // 다이어리 데이터 관리 Provider - 일기 작성, 수정, 삭제 등을 담당
         ChangeNotifierProvider(create: (_) => DiaryProvider()),
+        // 계산기 탭 데이터 관리 Provider
+        ChangeNotifierProvider(create: (_) => CalculatorProvider()),
       ],
       // 테마 변경사항을 실시간으로 반영하기 위한 Consumer
       child: Consumer<ThemeProvider>(

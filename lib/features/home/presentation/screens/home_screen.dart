@@ -6,6 +6,7 @@
  * - 일기 탭: 날짜별 일기 목록 표시
  * - 메모 탭: 일반 메모 목록 관리
  * - 할 일 탭: 날짜별 할 일 작성 및 관리
+ * - 계산기 탭: 계산 목록 (제목, 날짜/항목/금액 입력 및 총 합계)
  * 
  * 플로팅 액션 버튼을 통해 탭에 따라 적절한 일기/메모 작성 기능을 제공합니다.
  */
@@ -18,6 +19,7 @@ import '../widgets/calendar_tab.dart';
 import '../widgets/entries_tab.dart';
 import '../widgets/general_notes_tab.dart';
 import '../widgets/dated_notes_tab.dart';
+import '../widgets/calculator_tab.dart';
 
 /**
  * 홈 화면 StatefulWidget
@@ -27,7 +29,7 @@ import '../widgets/dated_notes_tab.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.initialTabIndex = 0});
 
-  /// 처음 표시할 탭 인덱스 (0: 달력, 1: 일기, 2: 메모, 3: 할 일)
+  /// 처음 표시할 탭 인덱스 (0: 달력, 1: 일기, 2: 메모, 3: 할 일, 4: 계산기)
   final int initialTabIndex;
 
   @override
@@ -41,7 +43,7 @@ class HomeScreen extends StatefulWidget {
  * 앱 시작 시 데이터를 로드하고 탭 기반 네비게이션을 관리합니다.
  */
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  /// 네 개 탭(달력, 일기, 메모, 할 일)을 관리하는 컨트롤러
+  /// 다섯 개 탭(달력, 일기, 메모, 할 일, 계산기)을 관리하는 컨트롤러
   late TabController _tabController;
   
   /// 메모 탭에서 선택할 특정 메모 ID
@@ -57,9 +59,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     
-    // 4개 탭을 가진 탭 컨트롤러 초기화 (위젯에서 연 경우 지정된 탭으로 바로 시작)
+    // 5개 탭을 가진 탭 컨트롤러 초기화 (위젯에서 연 경우 지정된 탭으로 바로 시작)
     _tabController = TabController(
-      length: 4,
+      length: 5,
       vsync: this,
       initialIndex: widget.initialTabIndex,
     );
@@ -130,6 +132,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Tab(icon: Icon(Icons.book), text: '일기'),
             Tab(icon: Icon(Icons.note), text: '메모'),
             Tab(icon: Icon(Icons.event_note), text: '할 일'),
+            Tab(icon: Icon(Icons.calculate), text: '계산기'),
           ],
         ),
       ),
@@ -144,6 +147,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   const EntriesTab(),
                   GeneralNotesTab(targetMemoId: _targetMemoId),
                   const DatedNotesTab(),
+                  const CalculatorTab(),
                 ],
               ),
             ),
@@ -275,6 +279,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ],
               ),
+            );
+          } else if (selectedIndex == 4) {
+            // 계산기 탭: 새 계산 추가 버튼
+            return FloatingActionButton(
+              heroTag: "calculator_tab",
+              onPressed: () => Navigator.pushNamed(context, '/calculator'),
+              tooltip: '계산 추가',
+              child: const Icon(Icons.add),
             );
           } else {
             // 할 일 탭: 할 일 추가 버튼 (항상 새로운 할 일 작성)

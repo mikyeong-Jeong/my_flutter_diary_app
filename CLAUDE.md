@@ -89,6 +89,7 @@ adb shell am start -W -a android.intent.action.VIEW -n com.diary.app/.MainActivi
 #### State Management (Provider Pattern)
 - `DiaryProvider`: Main business logic and data management
 - `ThemeProvider`: Theme switching (light/dark mode)
+- `CalculatorProvider`: Calculator tab sheets (stored in SharedPreferences via `CalculatorStorage`, not part of diary backup)
 
 #### Platform-Specific Storage
 - **Mobile**: File system storage (`storage_service_mobile.dart`)  
@@ -119,7 +120,8 @@ Located in `android/app/src/main/kotlin/com/diary/app/`:
 ### Feature Structure
 ```
 lib/features/
-├── home/        # Calendar, diary list, memo tab, to-do (dated note) tab
+├── home/        # Calendar, diary list, memo tab, to-do (dated note) tab, calculator list tab
+├── calculator/  # Calculator sheet editor (title, budget, date/item/amount rows, fixed spend/remaining summary)
 ├── write/       # Diary/memo/to-do creation and editing (checkbox toolbar)
 ├── read/        # Diary and to-do reading screens
 ├── search/      # Search and filtering functionality  
@@ -213,6 +215,7 @@ flutter clean && flutter build apk
 - `test/search_screen_test.dart`: search result cards do not overflow on narrow (360dp) screens
 - `test/deeplink_router_test.dart`, `test/widget_deeplink_start_test.dart`: widget deep link routing and direct start on the target screen
 - `test/checklist_test.dart`: checkbox toggle/strikethrough rules, read-screen toggle saves, edit-field strikethrough
+- `test/calculator_tab_test.dart`: calculator add/edit/delete flow, budget/remaining, fixed summary with scrolling rows
 - Focus on testing Provider logic and model serialization
 - Use `flutter test` for unit tests
 - Manual testing recommended for widget functionality
