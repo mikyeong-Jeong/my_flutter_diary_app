@@ -50,16 +50,20 @@ class ChecklistUtils {
 
   /// 취소선을 그어야 할 구간 목록 ([start, end) 쌍)
   ///
-  /// 체크된 체크박스(☑) 바로 뒤부터 사용자가 입력한 줄바꿈(\n) 전까지를
+  /// 체크된 체크박스(☑) 뒤의 첫 글자부터 사용자가 입력한 줄바꿈(\n) 전까지를
   /// 완료된 항목으로 보고 취소선 구간으로 반환합니다.
   /// 화면 폭 때문에 자동 줄바꿈된 부분도 같은 줄로 보고 끝까지 취소선을 긋습니다.
   static List<List<int>> checkedRanges(String text) {
     final ranges = <List<int>>[];
     for (int i = 0; i < text.length; i++) {
       if (text[i] != checked) continue;
-      final start = i + 1;
-      int end = text.indexOf('\n', start);
+      int end = text.indexOf('\n', i + 1);
       if (end == -1) end = text.length;
+      // 체크박스 뒤 공백은 제외하고 실제 글자부터 취소선 (공백에 짧은 선이 따로 그어지지 않도록)
+      int start = i + 1;
+      while (start < end && (text[start] == ' ' || text[start] == '\t')) {
+        start++;
+      }
       if (end > start) ranges.add([start, end]);
       // 같은 줄의 나머지는 이미 취소선 구간에 포함됨
       i = end;

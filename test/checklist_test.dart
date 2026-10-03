@@ -48,7 +48,7 @@ void main() {
       final ranges = ChecklistUtils.checkedRanges(text);
       expect(
         ranges.map((r) => text.substring(r[0], r[1])).toList(),
-        [' 우유', ' 빵 ☐ 잼', ' 아주 긴 항목은 화면에서 자동 줄바꿈되어도 끝까지'],
+        ['우유', '빵 ☐ 잼', '아주 긴 항목은 화면에서 자동 줄바꿈되어도 끝까지'],
       );
     });
   });
@@ -120,7 +120,9 @@ void main() {
       ));
 
       final span = contentSpan(tester, '우유');
-      expect(styleOfSpan(span, ' 계란')?.decoration, TextDecoration.lineThrough);
+      expect(styleOfSpan(span, '계란')?.decoration, TextDecoration.lineThrough);
+      // 체크박스와 글자 사이 공백에는 취소선을 긋지 않음 (짧은 선이 따로 보이지 않도록)
+      expect(styleOfSpan(span, ' ')?.decoration, isNot(TextDecoration.lineThrough));
       expect(styleOfSpan(span, ' 우유\n')?.decoration, isNot(TextDecoration.lineThrough));
       // ☐/☑ 문자는 글자(이모지)로 그리지 않고 같은 디자인의 아이콘으로 표시
       expect(span.toPlainText().contains('☑'), isFalse);
@@ -139,7 +141,8 @@ void main() {
 
       final controller = ChecklistTextEditingController(text: '☑ 완료\n☐ 할 일');
       var span = controller.buildTextSpan(context: context, withComposing: true);
-      expect(styleOfSpan(span, ' 완료')?.decoration, TextDecoration.lineThrough);
+      expect(styleOfSpan(span, '완료')?.decoration, TextDecoration.lineThrough);
+      expect(styleOfSpan(span, ' ')?.decoration, isNot(TextDecoration.lineThrough));
 
       // '할'을 조합 중인 상태
       controller.value = controller.value.copyWith(
@@ -147,7 +150,7 @@ void main() {
       );
       span = controller.buildTextSpan(context: context, withComposing: true);
       expect(styleOfSpan(span, '할')?.decoration, TextDecoration.underline);
-      expect(styleOfSpan(span, ' 완료')?.decoration, TextDecoration.lineThrough);
+      expect(styleOfSpan(span, '완료')?.decoration, TextDecoration.lineThrough);
       // 체크박스 문자 1개 = 아이콘 1개 (텍스트 길이/커서 위치 유지)
       expect(span.toPlainText().length, controller.text.length);
     });
@@ -232,7 +235,7 @@ void main() {
       // 체크해도 수정 시간은 바뀌지 않음
       expect(provider.datedNotes.single.updatedAt, DateTime(2026, 10, 1, 9, 0));
       final span = contentSpan(tester, '우유');
-      expect(styleOfSpan(span, ' 우유')?.decoration, TextDecoration.lineThrough);
+      expect(styleOfSpan(span, '우유')?.decoration, TextDecoration.lineThrough);
 
       // 다시 불러와도 체크 상태가 유지됨
       final reloaded = DiaryProvider();
