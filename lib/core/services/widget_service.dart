@@ -199,7 +199,7 @@ class WidgetService {
       final entry = await _storageService.loadEntry(memoId);
       if (entry != null) {
         // 날짜 포맷팅 (메모 타입에 따라 다르게 처리)
-        final date = entry.type == EntryType.dated && entry.date != null
+        final date = entry.type != EntryType.general && entry.date != null
             ? DateFormat('yyyy년 M월 d일').format(DateTime.parse(entry.date!))
             : DateFormat('yyyy년 M월 d일').format(entry.updatedAt);
         
@@ -214,7 +214,7 @@ class WidgetService {
         await HomeWidget.saveWidgetData<String>('single_memo_widget_${widgetId}_content', entry.content);
         await HomeWidget.saveWidgetData<String>('single_memo_widget_${widgetId}_icons', allEmojis.join(' '));
         await HomeWidget.saveWidgetData<String>('single_memo_widget_${widgetId}_type', 
-            entry.type == EntryType.dated ? 'dated' : 'general');
+            entry.type.name);
         
         // 위젯 업데이트
         await HomeWidget.updateWidget(
@@ -264,7 +264,7 @@ class WidgetService {
         'title': entry.title,
         'content': entry.content,
         'date': entry.date ?? '',
-        'type': entry.type == EntryType.dated ? 'dated' : 'general',
+        'type': entry.type.name, // dated / general / datedNote
         'updatedAt': entry.updatedAt.toIso8601String(),
       }).toList();
       

@@ -268,4 +268,31 @@ class DiaryEntry {
    * @return List<String> : 모든 이모지 목록 (기분 + 사용자 지정)
    */
   List<String> get allEmojis => [...moods, ...customEmojis];
+
+  /**
+   * 목록 정렬용 비교 함수
+   *
+   * 타입 순서(일기 → 할 일 → 일반 메모)로 먼저 묶고,
+   * 일기와 할 일은 날짜 최신순, 같은 날짜이거나 일반 메모는 수정시간 최신순으로 정렬합니다.
+   * 모든 타입 조합에 대해 일관된 결과를 반환합니다.
+   *
+   * @param a : 비교할 첫 번째 항목
+   * @param b : 비교할 두 번째 항목
+   * @return int : 정렬 순서 (음수면 a가 앞)
+   */
+  static int compareForList(DiaryEntry a, DiaryEntry b) {
+    const typeOrder = {
+      EntryType.dated: 0,
+      EntryType.datedNote: 1,
+      EntryType.general: 2,
+    };
+    final typeCompare = typeOrder[a.type]!.compareTo(typeOrder[b.type]!);
+    if (typeCompare != 0) return typeCompare;
+
+    if (a.type != EntryType.general) {
+      final dateCompare = (b.date ?? '').compareTo(a.date ?? '');
+      if (dateCompare != 0) return dateCompare;
+    }
+    return b.updatedAt.compareTo(a.updatedAt);
+  }
 }

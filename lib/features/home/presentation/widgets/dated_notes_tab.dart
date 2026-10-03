@@ -86,7 +86,7 @@ class _DatedNotesTabState extends State<DatedNotesTab> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: Theme.of(context).cardColor,
                       ),
                     ),
                   ),

@@ -102,7 +102,7 @@ class _CustomToolbarState extends State<CustomToolbar>
         height: 56.0, // 툴바 고정 높이
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -225,8 +225,8 @@ class _CustomToolbarState extends State<CustomToolbar>
             icon,
             size: 20,
             color: isEnabled 
-                ? (isActive ? Theme.of(context).primaryColor : Colors.grey[700])
-                : Colors.grey[400],
+                ? (isActive ? Theme.of(context).primaryColor : Theme.of(context).iconTheme.color)
+                : Theme.of(context).disabledColor,
           ),
           onPressed: isEnabled ? onPressed : null,
           padding: EdgeInsets.zero,

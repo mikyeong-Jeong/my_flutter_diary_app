@@ -90,16 +90,8 @@ class StorageService {
             .map((e) => DiaryEntry.fromJson(e as Map<String, dynamic>))
             .toList();
         
-        // 정렬: 날짜별 메모는 날짜순, 일반 메모는 수정시간순
-        entries.sort((a, b) {
-          if (a.type == EntryType.dated && b.type == EntryType.dated) {
-            return b.date!.compareTo(a.date!);
-          } else if (a.type == EntryType.general && b.type == EntryType.general) {
-            return b.updatedAt.compareTo(a.updatedAt);
-          } else {
-            return a.type == EntryType.dated ? -1 : 1;
-          }
-        });
+        // 정렬: 일기 → 할 일 → 일반 메모 순 (DiaryEntry.compareForList 참고)
+        entries.sort(DiaryEntry.compareForList);
         
         return entries;
       }

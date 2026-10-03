@@ -382,17 +382,7 @@ class DiaryProvider extends ChangeNotifier {
   }
 
   void _sortEntries() {
-    _entries.sort((a, b) {
-      // 날짜별 메모는 날짜순으로, 일반 메모는 수정시간순으로 정렬
-      if (a.type == EntryType.dated && b.type == EntryType.dated) {
-        return b.date!.compareTo(a.date!);
-      } else if (a.type == EntryType.general && b.type == EntryType.general) {
-        return b.updatedAt.compareTo(a.updatedAt);
-      } else {
-        // 타입이 다른 경우 날짜별 메모를 먼저
-        return a.type == EntryType.dated ? -1 : 1;
-      }
-    });
+    _entries.sort(DiaryEntry.compareForList);
   }
 
   String _formatDate(DateTime date) {

@@ -111,7 +111,10 @@ class TextStyleState extends ChangeNotifier {
     final selection = controller.selection;
     
     // 현재 커서 위치에 체크박스 문자 삽입
-    final cursorPosition = selection.start;
+    // 본문에 커서가 없으면(selection = -1) 텍스트 끝에 삽입
+    final cursorPosition = selection.isValid
+        ? selection.start.clamp(0, currentText.length)
+        : currentText.length;
     
     // 빈 체크박스와 공백을 현재 위치에 삽입
     String newText = currentText.replaceRange(

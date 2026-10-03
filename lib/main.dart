@@ -139,27 +139,25 @@ void _handleDeeplink(Uri uri) {
         if (context != null) {
           final diaryProvider = context.read<DiaryProvider>();
           // 해당 날짜의 일기 찾기
-          final entry = diaryProvider.entries.firstWhere(
-            (e) => e.date == date && e.type == EntryType.dated,
-            orElse: () => DiaryEntry(
-              date: date,
-              title: '',
-              content: '',
-              type: EntryType.dated,
-            ),
-          );
+          final matches = diaryProvider.entries
+              .where((e) => e.date == date && e.type == EntryType.dated);
 
-          if (entry.id.isNotEmpty) {
+          if (matches.isNotEmpty) {
             // 일기가 있으면 읽기 화면으로
             MyApp.navigatorKey.currentState?.pushNamed(
               '/read',
-              arguments: entry,
+              arguments: matches.first,
             );
           } else {
             // 일기가 없으면 작성 화면으로
             MyApp.navigatorKey.currentState?.pushNamed(
               '/write',
-              arguments: entry,
+              arguments: DiaryEntry(
+                date: date,
+                title: '',
+                content: '',
+                type: EntryType.dated,
+              ),
             );
           }
         }

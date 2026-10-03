@@ -43,7 +43,11 @@ class _DatedNoteScreenState extends State<DatedNoteScreen> with WidgetsBindingOb
     // 전달받은 entry 또는 새 entry 설정
     if (widget.entry != null) {
       _entry = widget.entry!;
-      _isEditing = _entry.id.isNotEmpty;
+      // id는 항상 자동 생성되므로, 이미 저장된 항목인지로 수정 여부를 판단
+      _isEditing = context
+          .read<DiaryProvider>()
+          .entries
+          .any((e) => e.id == _entry.id);
       _titleController = TextEditingController(text: _entry.title);
       _contentController = TextEditingController(text: _entry.content);
       _selectedDate = _entry.date != null ? DateTime.parse(_entry.date!) : DateTime.now();
@@ -331,13 +335,7 @@ class _DatedNoteScreenState extends State<DatedNoteScreen> with WidgetsBindingOb
   /// KeyboardAwareToolbarMixin에서 요구하는 현재 활성화된 TextEditingController
   @override
   TextEditingController? get currentTextController {
-    // 현재 포커스된 TextField의 컨트롤러 반환
-    if (_titleFocusNode.hasFocus) {
-      return _titleController;
-    } else if (_contentFocusNode.hasFocus) {
-      return _contentController;
-    }
-    // 기본값은 내용 컨트롤러
+    // 툴바(체크박스)는 본문 전용 - 제목 등 다른 입력칸에 삽입되지 않도록 항상 본문 컨트롤러 반환
     return _contentController;
   }
 

@@ -195,11 +195,10 @@ class AdvancedRichTextFieldState extends State<AdvancedRichTextField> {
           controller: widget.controller,
           focusNode: widget.focusNode,
           decoration: widget.decoration,
+          // 색상은 테마를 따름 (다크모드에서 검정 고정 시 글자가 보이지 않음)
           style: const TextStyle(
             fontSize: 16.0,
-            color: Colors.black,
             height: 1.2,
-            fontFamily: null,
           ),
           maxLines: widget.maxLines,
           minLines: widget.minLines,
@@ -207,7 +206,6 @@ class AdvancedRichTextFieldState extends State<AdvancedRichTextField> {
           textInputAction: widget.textInputAction,
           textCapitalization: widget.textCapitalization,
           onTap: _handleTap,
-          cursorColor: Colors.black,
           cursorWidth: 1.5,
           showCursor: true,
           enableInteractiveSelection: true,

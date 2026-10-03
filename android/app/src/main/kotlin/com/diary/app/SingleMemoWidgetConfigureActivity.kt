@@ -217,7 +217,7 @@ class SingleMemoWidgetConfigureActivity : Activity() {
         val editor = prefs.edit()
         
         // 날짜 포맷팅
-        val displayDate = if (selectedMemo.type == "dated" && selectedMemo.date.isNotEmpty()) {
+        val displayDate = if (selectedMemo.type != "general" && selectedMemo.date.isNotEmpty()) {
             try {
                 val parts = selectedMemo.date.split("-")
                 "${parts[0]}년 ${parts[1].toInt()}월 ${parts[2].toInt()}일"
