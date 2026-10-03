@@ -49,6 +49,11 @@ class EntriesTab extends StatelessWidget {
             final entry = entries[index];
             return Card(
               margin: const EdgeInsets.only(bottom: 12.0),
+              // 메모·할 일 탭과 동일한 테두리 윤곽선
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: Theme.of(context).dividerColor),
+              ),
               child: InkWell(
                 onTap: () {
                   Navigator.pushNamed(context, '/read', arguments: entry);
@@ -82,21 +87,16 @@ class EntriesTab extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      // 제목
-                      if (entry.title.isNotEmpty) ...[
-                        Text(
-                          entry.title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      // 전체 내용 표시
+                      // 목록에는 제목만 표시 (내용은 일기를 열어서 확인)
                       Text(
-                        entry.content,
-                        style: const TextStyle(fontSize: 14),
+                        entry.title.isNotEmpty ? entry.title : '제목 없음',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: entry.title.isNotEmpty ? null : Colors.grey[600],
+                        ),
                       ),
                       // 태그
                       if (entry.tags.isNotEmpty) ...[
