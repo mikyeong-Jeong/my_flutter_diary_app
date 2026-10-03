@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
 import '../../../../core/widgets/checklist_text.dart';
+import '../../../../core/theme/entry_colors.dart';
 
 /// 검색 화면 위젯
 /// 
@@ -588,11 +589,8 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
         final isDatedNote = entry.type == EntryType.datedNote;
         return Card(
           margin: const EdgeInsets.only(bottom: 12.0),
-          // 일기·메모·할 일 탭과 동일한 테두리 윤곽선
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Theme.of(context).dividerColor),
-          ),
+          // 항목 종류별 색상 테두리 (일기 파랑, 할 일 주황, 메모 초록)
+          shape: EntryColors.cardShape(EntryColors.of(entry.type)),
           child: InkWell(
             onTap: () {
               // 할 일은 전용 읽기 화면으로 이동

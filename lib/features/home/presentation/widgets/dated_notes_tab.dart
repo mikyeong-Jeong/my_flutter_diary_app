@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/entry_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/providers/diary_provider.dart';
@@ -179,11 +180,8 @@ class _DatedNotesTabState extends State<DatedNotesTab> {
         final note = notes[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 12.0),
-          // 메모 탭과 동일한 테두리 윤곽선
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Theme.of(context).dividerColor),
-          ),
+          // 할 일 색상(주황) 테두리 윤곽선
+          shape: EntryColors.cardShape(EntryColors.todo),
           child: InkWell(
             onTap: () async {
               // 편집 화면으로 이동하고 결과를 기다림

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:diary_app/core/models/diary_entry.dart';
 import 'package:diary_app/core/providers/diary_provider.dart';
+import 'package:diary_app/core/theme/entry_colors.dart';
 import 'package:diary_app/features/search/presentation/screens/search_screen.dart';
 
 void main() {
@@ -62,10 +63,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // 검색 결과 카드에 테두리 윤곽선 적용
-    final card = tester.widget<Card>(find.byType(Card).first);
-    expect((card.shape as RoundedRectangleBorder).side.style, BorderStyle.solid);
-    expect((card.shape as RoundedRectangleBorder).side.width, greaterThan(0));
+    // 검색 결과 카드 테두리는 항목 종류별 색상 (일기: 파랑)
+    final diaryCard = tester.widget<Card>(find.byType(Card).first);
+    expect((diaryCard.shape as RoundedRectangleBorder).side.color, EntryColors.diary);
+    expect((diaryCard.shape as RoundedRectangleBorder).side.width, greaterThan(0));
 
     // 일기·할 일 탭
     expect(find.text('날짜 2026.12.25'), findsOneWidget);
@@ -76,6 +77,9 @@ void main() {
     await tester.tap(find.textContaining('일반 메모 ('));
     await tester.pumpAndSettle();
     expect(find.text('생성 2026.12.25 10:30'), findsOneWidget);
+    // 메모 카드 테두리: 초록
+    final memoCard = tester.widget<Card>(find.byType(Card).last);
+    expect((memoCard.shape as RoundedRectangleBorder).side.color, EntryColors.memo);
     expect(find.text('수정 2026.12.31 23:59'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

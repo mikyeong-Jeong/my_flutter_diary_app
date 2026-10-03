@@ -107,6 +107,7 @@ adb shell am start -W -a android.intent.action.VIEW -n com.diary.app/.MainActivi
   - Read screens / list previews: `lib/core/widgets/checklist_text.dart` (`ChecklistText`, tap icon to toggle + save; `selectable: false` for list cards)
   - Edit screens: `ChecklistTextEditingController` (icons + strikethrough while editing)
   - Android home widgets (plain text): `ChecklistUtils.forPlainDisplay` appends U+FE0E after `☑` to avoid emoji rendering
+- Entry colors: `lib/core/theme/entry_colors.dart` (`EntryColors`) — diary blue, to-do orange, memo green, calculator purple; used for list card borders (`EntryColors.cardShape`) in all tabs, search results and calendar cards
 - `AppSettings`: App configuration and preferences
 - Uses `json_annotation` and `build_runner` for code generation
 

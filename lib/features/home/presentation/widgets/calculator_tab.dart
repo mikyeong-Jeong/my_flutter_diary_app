@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/models/calculator_sheet.dart';
 import '../../../../core/providers/calculator_provider.dart';
+import '../../../../core/theme/entry_colors.dart';
 
 /// 계산기 탭 위젯
 ///
@@ -54,11 +55,8 @@ class CalculatorTab extends StatelessWidget {
   Widget _buildSheetCard(BuildContext context, CalculatorSheet sheet) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
-      // 메모·할 일 탭과 동일한 테두리 윤곽선
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Theme.of(context).dividerColor),
-      ),
+      // 계산 색상(보라) 테두리 윤곽선
+      shape: EntryColors.cardShape(EntryColors.calculator),
       child: InkWell(
         onTap: () => Navigator.pushNamed(context, '/calculator', arguments: sheet),
         borderRadius: BorderRadius.circular(12),

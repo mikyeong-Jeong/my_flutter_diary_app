@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/entry_colors.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/providers/diary_provider.dart';
 
@@ -122,10 +123,10 @@ class _GeneralNotesTabState extends State<GeneralNotesTab> {
               margin: const EdgeInsets.only(bottom: 12.0),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                // 기본 테두리 윤곽선, 선택된 메모는 강조 색상
+                // 메모 색상(초록) 테두리 윤곽선, 위젯에서 선택해 연 메모는 강조 색상
                 border: Border.all(
-                  color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).dividerColor,
-                  width: isSelected ? 2 : 1,
+                  color: isSelected ? Theme.of(context).primaryColor : EntryColors.memo,
+                  width: isSelected ? 2 : EntryColors.borderWidth,
                 ),
                 boxShadow: isSelected ? [
                   BoxShadow(

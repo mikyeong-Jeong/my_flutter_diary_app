@@ -15,6 +15,7 @@
 
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/checklist_text.dart';
+import '../../../../core/theme/entry_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
@@ -605,7 +606,7 @@ class _CalendarTabState extends State<CalendarTab> {
       margin: const EdgeInsets.only(bottom: 12.0),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Colors.blue, width: 2.0),
+        side: const BorderSide(color: EntryColors.diary, width: 2.0),
       ),
       child: InkWell(
         onTap: () => Navigator.pushNamed(context, '/read', arguments: entry),
@@ -664,7 +665,7 @@ class _CalendarTabState extends State<CalendarTab> {
       margin: const EdgeInsets.only(bottom: 12.0),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Colors.orange, width: 2.0),
+        side: const BorderSide(color: EntryColors.todo, width: 2.0),
       ),
       child: InkWell(
         onTap: () => Navigator.pushNamed(context, '/dated_note', arguments: entry),
