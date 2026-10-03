@@ -63,13 +63,15 @@ void main() {
     await tester.pumpAndSettle();
 
     // 일기·할 일 탭
-    expect(find.textContaining('작성: 2026년 12월 25일'), findsOneWidget);
+    expect(find.text('날짜 2026.12.25'), findsOneWidget);
+    expect(find.text('작성 2026.12.25 10:30'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     // 일반 메모 탭
     await tester.tap(find.textContaining('일반 메모 ('));
     await tester.pumpAndSettle();
-    expect(find.textContaining('수정: 2026년 12월 31일 23:59'), findsOneWidget);
+    expect(find.text('생성 2026.12.25 10:30'), findsOneWidget);
+    expect(find.text('수정 2026.12.31 23:59'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

@@ -526,6 +526,15 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
     );
   }
 
+  /// 검색 결과 카드용 짧은 날짜 형식 (한 줄에 생성/수정 시간이 모두 들어가도록)
+  static final DateFormat _shortDateTime = DateFormat('yyyy.MM.dd HH:mm');
+
+  /// 일기/할 일의 날짜를 짧은 형식(yyyy.MM.dd)으로 변환
+  String _formatShortDate(DiaryEntry entry) {
+    if (entry.date == null) return '날짜 없음';
+    return DateFormat('yyyy.MM.dd').format(DateTime.parse(entry.date!));
+  }
+
   Widget _buildSearchResults(List<DiaryEntry> results, bool isDated) {
     if (results.isEmpty) {
       String emptyMessage = '검색 결과가 없습니다';
@@ -685,8 +694,8 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                           Flexible(
                             child: Text(
                               isDated
-                                  ? '날짜: ${entry.formattedDate}'
-                                  : '생성: ${entry.formattedCreatedAt}',
+                                  ? '날짜 ${_formatShortDate(entry)}'
+                                  : '생성 ${_shortDateTime.format(entry.createdAt)}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: isDated ? Colors.blue[600] : Colors.green[600],
@@ -698,8 +707,8 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                       ),
                       Text(
                         isDated
-                            ? '작성: ${entry.formattedCreatedAt}'
-                            : '수정: ${entry.formattedUpdatedAt}',
+                            ? '작성 ${_shortDateTime.format(entry.createdAt)}'
+                            : '수정 ${_shortDateTime.format(entry.updatedAt)}',
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.grey[600],
