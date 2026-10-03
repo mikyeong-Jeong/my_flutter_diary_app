@@ -587,6 +587,11 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
         final isDatedNote = entry.type == EntryType.datedNote;
         return Card(
           margin: const EdgeInsets.only(bottom: 12.0),
+          // 일기·메모·할 일 탭과 동일한 테두리 윤곽선
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Theme.of(context).dividerColor),
+          ),
           child: InkWell(
             onTap: () {
               // 할 일은 전용 읽기 화면으로 이동

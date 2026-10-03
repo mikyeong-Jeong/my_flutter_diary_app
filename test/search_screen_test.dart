@@ -62,6 +62,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // 검색 결과 카드에 테두리 윤곽선 적용
+    final card = tester.widget<Card>(find.byType(Card).first);
+    expect((card.shape as RoundedRectangleBorder).side.style, BorderStyle.solid);
+    expect((card.shape as RoundedRectangleBorder).side.width, greaterThan(0));
+
     // 일기·할 일 탭
     expect(find.text('날짜 2026.12.25'), findsOneWidget);
     expect(find.text('작성 2026.12.25 10:30'), findsOneWidget);
