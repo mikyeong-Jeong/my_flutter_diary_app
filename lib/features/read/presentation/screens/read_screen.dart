@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/models/diary_entry.dart';
+import '../../../../core/providers/diary_provider.dart';
+import '../../../../core/widgets/checklist_text.dart';
 
 /// 일기/메모 읽기 전용 화면
 /// 
@@ -11,7 +14,12 @@ class ReadScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final entry = ModalRoute.of(context)!.settings.arguments as DiaryEntry;
+    final routeEntry = ModalRoute.of(context)!.settings.arguments as DiaryEntry;
+    // 체크박스 토글 등으로 저장된 최신 내용을 표시하기 위해 Provider에서 다시 조회
+    final entry = context.watch<DiaryProvider>().entries.firstWhere(
+          (e) => e.id == routeEntry.id,
+          orElse: () => routeEntry,
+        );
     
     return Scaffold(
       appBar: AppBar(
@@ -135,11 +143,17 @@ class ReadScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: SelectableText(
+              // 체크박스(□/■)를 탭하면 체크/해제되고 바로 저장 (체크된 항목은 취소선)
+              child: ChecklistText(
                 entry.content,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   height: 1.6,
                 ),
+                onChanged: (newContent) {
+                  context.read<DiaryProvider>().updateEntry(
+                        entry.copyWith(content: newContent),
+                      );
+                },
               ),
             ),
             

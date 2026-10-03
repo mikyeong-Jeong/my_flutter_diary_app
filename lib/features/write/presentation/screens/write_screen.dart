@@ -6,6 +6,7 @@ import '../../../../core/models/diary_entry.dart';
 import '../../../../core/utils/text_utils.dart';
 import '../widgets/toolbar_overlay_manager.dart';
 import '../widgets/advanced_rich_text_field.dart';
+import '../widgets/checklist_text_editing_controller.dart';
 
 class WriteScreen extends StatefulWidget {
   const WriteScreen({super.key});
@@ -16,7 +17,8 @@ class WriteScreen extends StatefulWidget {
 
 class _WriteScreenState extends State<WriteScreen> with WidgetsBindingObserver, KeyboardAwareToolbarMixin {
   final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
+  // 체크된 항목(■)에 취소선을 표시하는 본문 컨트롤러
+  final _contentController = ChecklistTextEditingController();
   final _customTagController = TextEditingController();
   final _customEmojiController = TextEditingController();
   

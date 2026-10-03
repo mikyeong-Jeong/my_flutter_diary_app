@@ -5,6 +5,7 @@ import '../../../../core/models/diary_entry.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../widgets/toolbar_overlay_manager.dart';
 import '../widgets/advanced_rich_text_field.dart';
+import '../widgets/checklist_text_editing_controller.dart';
 
 /// 할 일 작성 화면
 /// 
@@ -47,7 +48,7 @@ class _DatedNoteScreenState extends State<DatedNoteScreen> with WidgetsBindingOb
           .entries
           .any((e) => e.id == _entry.id);
       _titleController = TextEditingController(text: _entry.title);
-      _contentController = TextEditingController(text: _entry.content);
+      _contentController = ChecklistTextEditingController(text: _entry.content);
       _selectedDate = _entry.date != null ? DateTime.parse(_entry.date!) : DateTime.now();
     } else {
       _entry = DiaryEntry(
@@ -57,7 +58,7 @@ class _DatedNoteScreenState extends State<DatedNoteScreen> with WidgetsBindingOb
         type: EntryType.datedNote,
       );
       _titleController = TextEditingController();
-      _contentController = TextEditingController();
+      _contentController = ChecklistTextEditingController();
       _selectedDate = DateTime.now();
     }
   }

@@ -1,0 +1,167 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:diary_app/core/models/diary_entry.dart';
+import 'package:diary_app/core/providers/diary_provider.dart';
+import 'package:diary_app/core/utils/checklist_utils.dart';
+import 'package:diary_app/core/widgets/checklist_text.dart';
+import 'package:diary_app/features/read/presentation/screens/dated_note_read_screen.dart';
+import 'package:diary_app/features/write/presentation/widgets/checklist_text_editing_controller.dart';
+
+/// RichText 안에서 [text]가 포함된 TextSpan의 스타일을 찾음
+/// 본문 텍스트(체크박스 포함)를 그리는 RichText의 span
+InlineSpan contentSpan(WidgetTester tester, String containing) {
+  return tester
+      .widget<RichText>(find.byWidgetPredicate(
+        (w) => w is RichText && w.text.toPlainText().contains(containing),
+      ).first)
+      .text;
+}
+
+TextStyle? styleOfSpan(InlineSpan root, String text) {
+  TextStyle? found;
+  root.visitChildren((span) {
+    if (span is TextSpan && span.text == text) {
+      found = span.style;
+      return false;
+    }
+    return true;
+  });
+  return found;
+}
+
+void main() {
+  group('ChecklistUtils', () {
+    test('toggleAt은 체크박스만 토글한다', () {
+      expect(ChecklistUtils.toggleAt('□ 우유', 0), '■ 우유');
+      expect(ChecklistUtils.toggleAt('■ 우유', 0), '□ 우유');
+      expect(ChecklistUtils.toggleAt('□ 우유', 2), '□ 우유');
+    });
+
+    test('checkedRanges는 ■ 뒤부터 사용자가 입력한 줄바꿈 전까지를 반환한다', () {
+      const text = '■ 우유\n□ 계란\n메모 ■ 빵 □ 잼\n■ 아주 긴 항목은 화면에서 자동 줄바꿈되어도 끝까지';
+      final ranges = ChecklistUtils.checkedRanges(text);
+      expect(
+        ranges.map((r) => text.substring(r[0], r[1])).toList(),
+        [' 우유', ' 빵 □ 잼', ' 아주 긴 항목은 화면에서 자동 줄바꿈되어도 끝까지'],
+      );
+    });
+  });
+
+  group('ChecklistText (읽기 전용)', () {
+    testWidgets('체크박스를 탭하면 토글된 텍스트를 전달한다', (tester) async {
+      String? changed;
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: ChecklistText('□ 우유\n■ 계란', onChanged: (v) => changed = v),
+        ),
+      ));
+
+      await tester.tapOnText(find.textRange.ofSubstring('□'));
+      expect(changed, '■ 우유\n■ 계란');
+    });
+
+    testWidgets('체크된 항목에만 취소선을 그린다', (tester) async {
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(body: ChecklistText('□ 우유\n■ 계란')),
+      ));
+
+      final span = contentSpan(tester, '□');
+      expect(styleOfSpan(span, ' 계란')?.decoration, TextDecoration.lineThrough);
+      expect(styleOfSpan(span, ' 우유\n')?.decoration, isNot(TextDecoration.lineThrough));
+    });
+  });
+
+  group('ChecklistTextEditingController (편집)', () {
+    testWidgets('체크된 항목에 취소선을 그리고, 한글 조합 구간 밑줄을 유지한다', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: SizedBox())));
+      final context = tester.element(find.byType(SizedBox));
+
+      final controller = ChecklistTextEditingController(text: '■ 완료\n□ 할 일');
+      var span = controller.buildTextSpan(context: context, withComposing: true);
+      expect(styleOfSpan(span, ' 완료')?.decoration, TextDecoration.lineThrough);
+
+      // '할'을 조합 중인 상태
+      controller.value = controller.value.copyWith(
+        composing: const TextRange(start: 7, end: 8),
+      );
+      span = controller.buildTextSpan(context: context, withComposing: true);
+      expect(styleOfSpan(span, '할')?.decoration, TextDecoration.underline);
+      expect(styleOfSpan(span, ' 완료')?.decoration, TextDecoration.lineThrough);
+    });
+  });
+
+  group('할 일 읽기 화면', () {
+    late Directory tempDir;
+
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('checklist_test');
+      SharedPreferences.setMockInitialValues({});
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/path_provider'),
+        (call) async => tempDir.path,
+      );
+      messenger.setMockMethodCallHandler(
+        const MethodChannel('home_widget'),
+        (call) async => true,
+      );
+    });
+
+    tearDown(() async {
+      await tempDir.delete(recursive: true);
+    });
+
+    testWidgets('읽기 화면에서 체크박스를 탭하면 체크되고 저장된다', (tester) async {
+      final provider = DiaryProvider();
+      final note = DiaryEntry(
+        date: '2026-10-03',
+        title: '장보기',
+        content: '□ 우유\n□ 계란',
+        type: EntryType.datedNote,
+      );
+      await tester.runAsync(() async {
+        await provider.loadEntries();
+        await provider.addEntry(note);
+      });
+
+      await tester.pumpWidget(ChangeNotifierProvider<DiaryProvider>.value(
+        value: provider,
+        child: MaterialApp(
+          // 실제 앱과 동일한 한국어 로케일 (날짜 표시용)
+          locale: const Locale('ko', 'KR'),
+          supportedLocales: const [Locale('ko', 'KR')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          onGenerateRoute: (settings) => MaterialPageRoute(
+            settings: RouteSettings(name: '/dated_note', arguments: note),
+            builder: (_) => const DatedNoteReadScreen(),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      // 첫 번째 체크박스 탭
+      await tester.tapOnText(find.textRange.ofSubstring('□').first);
+      // 저장(파일 쓰기)이 끝날 때까지 실제 시간을 흘려보내며 대기
+      for (int i = 0; i < 10 && provider.datedNotes.single.content.startsWith('□'); i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+
+      expect(provider.datedNotes.single.content, '■ 우유\n□ 계란');
+      final span = contentSpan(tester, '□');
+      expect(styleOfSpan(span, ' 우유')?.decoration, TextDecoration.lineThrough);
+
+      // 다시 불러와도 체크 상태가 유지됨
+      final reloaded = DiaryProvider();
+      await tester.runAsync(() => reloaded.loadEntries());
+      expect(reloaded.datedNotes.single.content, '■ 우유\n□ 계란');
+    });
+  });
+}

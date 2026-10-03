@@ -99,6 +99,10 @@ adb shell am start -W -a android.intent.action.VIEW -n com.diary.app/.MainActivi
 - `DiaryEntry`: Core data model with JSON serialization
   - `EntryType`: `dated` (diary), `general` (memo), `datedNote` (to-do, no emoji/tags)
   - `DiaryEntry.compareForList`: shared sort order (diary → to-do → memo)
+- Checklists: content stores `□` (unchecked) / `■` (checked); text after `■` up to the user's line break (`\n`) is struck through
+  - Rules: `lib/core/utils/checklist_utils.dart`
+  - Read screens: `lib/core/widgets/checklist_text.dart` (tap to toggle + save)
+  - Edit screens: `ChecklistTextEditingController` (strikethrough while editing)
 - `AppSettings`: App configuration and preferences
 - Uses `json_annotation` and `build_runner` for code generation
 
@@ -208,6 +212,7 @@ flutter clean && flutter build apk
 - `test/json_utils_test.dart`: backup file encoding (UTF-8 BOM / UTF-16, Korean text preserved)
 - `test/search_screen_test.dart`: search result cards do not overflow on narrow (360dp) screens
 - `test/deeplink_router_test.dart`, `test/widget_deeplink_start_test.dart`: widget deep link routing and direct start on the target screen
+- `test/checklist_test.dart`: checkbox toggle/strikethrough rules, read-screen toggle saves, edit-field strikethrough
 - Focus on testing Provider logic and model serialization
 - Use `flutter test` for unit tests
 - Manual testing recommended for widget functionality
