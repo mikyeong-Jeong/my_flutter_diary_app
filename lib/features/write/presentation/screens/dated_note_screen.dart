@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/models/diary_entry.dart';
 import '../../../../core/providers/diary_provider.dart';
+import '../../../../core/utils/bold_utils.dart';
 import '../widgets/toolbar_overlay_manager.dart';
 import '../widgets/advanced_rich_text_field.dart';
 import '../widgets/checklist_text_editing_controller.dart';
@@ -22,7 +23,7 @@ class DatedNoteScreen extends StatefulWidget {
 
 class _DatedNoteScreenState extends State<DatedNoteScreen> with WidgetsBindingObserver, KeyboardAwareToolbarMixin {
   late TextEditingController _titleController;
-  late TextEditingController _contentController;
+  late ChecklistTextEditingController _contentController;
   late DateTime _selectedDate;
   
   // 포커스 노드들
@@ -48,7 +49,10 @@ class _DatedNoteScreenState extends State<DatedNoteScreen> with WidgetsBindingOb
           .entries
           .any((e) => e.id == _entry.id);
       _titleController = TextEditingController(text: _entry.title);
-      _contentController = ChecklistTextEditingController(text: _entry.content);
+      _contentController = ChecklistTextEditingController(
+        text: _entry.content,
+        boldRanges: _entry.boldRanges,
+      );
       _selectedDate = _entry.date != null ? DateTime.parse(_entry.date!) : DateTime.now();
     } else {
       _entry = DiaryEntry(
@@ -100,7 +104,9 @@ class _DatedNoteScreenState extends State<DatedNoteScreen> with WidgetsBindingOb
 
   /// 할 일 저장
   Future<void> _saveEntry() async {
-    final content = _contentController.text.trim();
+    // 앞뒤 공백을 잘라내면서 굵게 범위도 같은 기준으로 이동
+    final trimmedContent = BoldUtils.trim(_contentController.text, _contentController.boldRanges);
+    final content = trimmedContent.text;
     
     if (content.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -121,6 +127,7 @@ class _DatedNoteScreenState extends State<DatedNoteScreen> with WidgetsBindingOb
       final updatedEntry = _entry.copyWith(
         title: _titleController.text.trim(),
         content: content,
+        boldRanges: trimmedContent.boldRanges,
         date: currentDate,
         moods: [], // 할 일이지만 이모지 기능 제외
         customEmojis: [], // 할 일이지만 이모지 기능 제외

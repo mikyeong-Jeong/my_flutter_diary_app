@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../utils/bold_utils.dart';
 import '../utils/checklist_utils.dart';
 
 /// 체크박스(☐/☑)를 아이콘으로 표시하는 텍스트
@@ -8,6 +9,7 @@ import '../utils/checklist_utils.dart';
 ///   (☑ 문자는 기기에 따라 컬러 이모지로 표시되어 ☐와 모양이 달라지므로 아이콘 사용)
 /// - [onChanged]가 있으면 아이콘을 탭해 체크/해제하고, 바뀐 전체 텍스트를 전달합니다.
 /// - 체크된 항목(☑ 뒤 텍스트)은 취소선과 흐린 색으로 표시합니다.
+/// - [boldRanges] 구간은 굵게 표시합니다.
 /// - [selectable]이 true이면 길게 눌러 텍스트를 선택/복사할 수 있습니다.
 class ChecklistText extends StatelessWidget {
   const ChecklistText(
@@ -18,6 +20,7 @@ class ChecklistText extends StatelessWidget {
     this.selectable = true,
     this.maxLines,
     this.overflow,
+    this.boldRanges = const [],
   });
 
   final String text;
@@ -29,12 +32,16 @@ class ChecklistText extends StatelessWidget {
   final int? maxLines;
   final TextOverflow? overflow;
 
+  /// 굵게(Bold) 처리할 구간 목록 ([start, end) 쌍)
+  final List<List<int>> boldRanges;
+
   @override
   Widget build(BuildContext context) {
     final baseStyle = DefaultTextStyle.of(context).style.merge(style);
     final spans = buildChecklistSpans(
       text: text,
       baseStyle: baseStyle,
+      boldRanges: boldRanges,
       onToggle: onChanged == null ? null : (index) => onChanged!(ChecklistUtils.toggleAt(text, index)),
     );
     final richText = Text.rich(
@@ -69,6 +76,7 @@ Widget checklistIcon({required bool checked, required TextStyle style}) {
 List<InlineSpan> buildChecklistSpans({
   required String text,
   required TextStyle baseStyle,
+  List<List<int>> boldRanges = const [],
   ValueChanged<int>? onToggle,
 }) {
   final checkedRanges = ChecklistUtils.checkedRanges(text);
@@ -83,12 +91,14 @@ List<InlineSpan> buildChecklistSpans({
   final spans = <InlineSpan>[];
   final buffer = StringBuffer();
   bool? bufferChecked;
+  bool bufferBold = false;
 
   void flush() {
     if (buffer.isEmpty) return;
+    final style = bufferChecked == true ? checkedStyle : baseStyle;
     spans.add(TextSpan(
       text: buffer.toString(),
-      style: bufferChecked == true ? checkedStyle : baseStyle,
+      style: bufferBold ? style.copyWith(fontWeight: FontWeight.bold) : style,
     ));
     buffer.clear();
   }
@@ -111,9 +121,11 @@ List<InlineSpan> buildChecklistSpans({
       continue;
     }
     final checked = isChecked(i);
-    if (bufferChecked != checked) {
+    final bold = BoldUtils.isBoldAt(boldRanges, i);
+    if (bufferChecked != checked || bufferBold != bold) {
       flush();
       bufferChecked = checked;
+      bufferBold = bold;
     }
     buffer.write(char);
   }

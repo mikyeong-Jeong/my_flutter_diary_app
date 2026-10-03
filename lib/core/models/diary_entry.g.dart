@@ -25,6 +25,10 @@ DiaryEntry _$DiaryEntryFromJson(Map<String, dynamic> json) => DiaryEntry(
           : DateTime.parse(json['updatedAt'] as String),
       type: $enumDecodeNullable(_$EntryTypeEnumMap, json['type']) ??
           EntryType.dated,
+      boldRanges: (json['boldRanges'] as List<dynamic>?)
+          ?.map((e) =>
+              (e as List<dynamic>).map((e) => (e as num).toInt()).toList())
+          .toList(),
     );
 
 Map<String, dynamic> _$DiaryEntryToJson(DiaryEntry instance) =>
@@ -39,6 +43,7 @@ Map<String, dynamic> _$DiaryEntryToJson(DiaryEntry instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
       'type': _$EntryTypeEnumMap[instance.type]!,
+      'boldRanges': instance.boldRanges,
     };
 
 const _$EntryTypeEnumMap = {

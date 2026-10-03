@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
 import '../../../../core/utils/text_utils.dart';
+import '../../../../core/utils/bold_utils.dart';
 import '../widgets/toolbar_overlay_manager.dart';
 import '../widgets/advanced_rich_text_field.dart';
 import '../widgets/checklist_text_editing_controller.dart';
@@ -83,6 +84,7 @@ class _WriteScreenState extends State<WriteScreen> with WidgetsBindingObserver, 
           _isEditing = true;
           _titleController.text = _entry.title;
           _contentController.text = _entry.content;
+          _contentController.boldRanges = _entry.boldRanges;
           _selectedMoods = List.from(_entry.moods);
           _selectedCustomEmojis = List.from(_entry.customEmojis);
           _selectedTags = List.from(_entry.tags);
@@ -101,6 +103,7 @@ class _WriteScreenState extends State<WriteScreen> with WidgetsBindingObserver, 
         if (_isEditing) {
           _titleController.text = _entry.title;
           _contentController.text = _entry.content;
+          _contentController.boldRanges = _entry.boldRanges;
           _selectedMoods = List.from(_entry.moods);
           _selectedCustomEmojis = List.from(_entry.customEmojis);
           _selectedTags = List.from(_entry.tags);
@@ -171,13 +174,19 @@ class _WriteScreenState extends State<WriteScreen> with WidgetsBindingObserver, 
 
     // 텍스트 정리 (유효하지 않은 문자 제거)
     final cleanTitle = TextUtils.sanitizeText(_titleController.text.trim());
-    final cleanContent = TextUtils.sanitizeText(_contentController.text.trim());
+    // 앞뒤 공백을 잘라내면서 굵게 범위도 같은 기준으로 이동
+    final trimmedContent = BoldUtils.trim(
+      TextUtils.sanitizeText(_contentController.text),
+      _contentController.boldRanges,
+    );
+    final cleanContent = trimmedContent.text;
     
     // Content sanitization completed
     
     final updatedEntry = _entry.copyWith(
       title: cleanTitle,
       content: cleanContent,
+      boldRanges: trimmedContent.boldRanges,
       date: newDate,
       moods: _entry.type == EntryType.general ? [] : _selectedMoods,
       customEmojis: _entry.type == EntryType.general ? [] : _selectedCustomEmojis,

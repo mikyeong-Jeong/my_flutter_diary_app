@@ -150,6 +150,7 @@ class ReadScreen extends StatelessWidget {
                 // 체크박스(☐/☑)를 탭하면 체크/해제되고 바로 저장 (체크된 항목은 취소선)
                 child: ChecklistText(
                   entry.content,
+                  boldRanges: entry.boldRanges,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     height: 1.6,
                   ),

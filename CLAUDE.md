@@ -107,6 +107,10 @@ adb shell am start -W -a android.intent.action.VIEW -n com.diary.app/.MainActivi
   - Read screens / list previews: `lib/core/widgets/checklist_text.dart` (`ChecklistText`, tap icon to toggle + save; `selectable: false` for list cards)
   - Edit screens: `ChecklistTextEditingController` (icons + strikethrough while editing)
   - Android home widgets (plain text): `ChecklistUtils.forPlainDisplay` appends U+FE0E after `☑` to avoid emoji rendering
+- Bold: `DiaryEntry.boldRanges` stores bold spans as `[start, end)` offsets into `content` (legacy data → empty list)
+  - Rules: `lib/core/utils/bold_utils.dart` (`BoldUtils.toggle` / `adjustForEdit` shifts ranges as text is typed or deleted / `trim` keeps ranges aligned when trimming on save)
+  - Edit: `ChecklistTextEditingController.toggleBoldOnSelection()` — triggered from the text-selection menu ("굵게"/"굵게 해제", `AdvancedRichTextField._buildContextMenu`) or the toolbar **B** button
+  - Display: pass `boldRanges` to `ChecklistText` (read screens, search, calendar cards)
 - Entry colors: `lib/core/theme/entry_colors.dart` (`EntryColors`) — diary blue, to-do orange, memo green, calculator purple; used for list card borders (`EntryColors.cardShape`) in all tabs, search results and calendar cards
 - `AppSettings`: App configuration and preferences
 - Uses `json_annotation` and `build_runner` for code generation
@@ -221,6 +225,7 @@ flutter clean && flutter build apk
 - `test/deeplink_router_test.dart`, `test/widget_deeplink_start_test.dart`: widget deep link routing and direct start on the target screen
 - `test/checklist_test.dart`: checkbox toggle/strikethrough rules, read-screen toggle saves, edit-field strikethrough
 - `test/calculator_tab_test.dart`: calculator add/edit/delete flow, budget/remaining, fixed summary with scrolling rows
+- `test/bold_test.dart`: bold toggle on selection, range shifting on edits, selection-menu "굵게", JSON round-trip, read-screen bold
 - Focus on testing Provider logic and model serialization
 - Use `flutter test` for unit tests
 - Manual testing recommended for widget functionality

@@ -65,6 +65,9 @@ class DiaryEntry {
   /// 항목 타입 (dated/general)
   final EntryType type;
 
+  /// 본문 중 굵게(Bold) 처리한 구간 목록 ([start, end) 쌍, 본문 글자 위치 기준)
+  final List<List<int>> boldRanges;
+
   /**
    * DiaryEntry 생성자
    * 
@@ -90,12 +93,14 @@ class DiaryEntry {
     DateTime? createdAt,
     DateTime? updatedAt,
     this.type = EntryType.dated,
+    List<List<int>>? boldRanges,
   })  : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         moods = moods ?? [],
         tags = tags ?? [],
         customEmojis = customEmojis ?? [],
         createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+        updatedAt = updatedAt ?? DateTime.now(),
+        boldRanges = boldRanges ?? const [];
 
   /**
    * 이전 버전 호환성을 위한 mood getter
@@ -192,6 +197,7 @@ class DiaryEntry {
     DateTime? createdAt,
     DateTime? updatedAt,
     EntryType? type,
+    List<List<int>>? boldRanges,
   }) {
     return DiaryEntry(
       id: id ?? this.id,
@@ -204,6 +210,7 @@ class DiaryEntry {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
       type: type ?? this.type,
+      boldRanges: boldRanges ?? this.boldRanges,
     );
   }
 

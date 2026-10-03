@@ -638,7 +638,7 @@ class _CalendarTabState extends State<CalendarTab> {
               ),
               const SizedBox(height: 8),
               // 체크박스는 아이콘으로 표시 (목록에서는 탭/선택 없이 보기만)
-              ChecklistText(entry.content, style: const TextStyle(fontSize: 14), selectable: false),
+              ChecklistText(entry.content, boldRanges: entry.boldRanges, style: const TextStyle(fontSize: 14), selectable: false),
               if (entry.tags.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Wrap(
@@ -689,7 +689,7 @@ class _CalendarTabState extends State<CalendarTab> {
               ),
               const SizedBox(height: 8),
               // 체크박스는 아이콘으로 표시 (목록에서는 탭/선택 없이 보기만)
-              ChecklistText(entry.content, style: const TextStyle(fontSize: 14), selectable: false),
+              ChecklistText(entry.content, boldRanges: entry.boldRanges, style: const TextStyle(fontSize: 14), selectable: false),
               const SizedBox(height: 8),
               Text('작성: ${entry.formattedCreatedAt}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
             ],

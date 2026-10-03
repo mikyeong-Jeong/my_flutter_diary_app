@@ -657,6 +657,7 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                   // 내용 (체크박스는 아이콘으로 표시)
                   ChecklistText(
                     entry.content,
+                    boldRanges: entry.boldRanges,
                     selectable: false,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,

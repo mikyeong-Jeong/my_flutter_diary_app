@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/utils/checklist_utils.dart';
+import 'checklist_text_editing_controller.dart';
 import 'rich_text_style_manager.dart';
 import 'text_style_state.dart';
 
@@ -174,7 +175,7 @@ class AdvancedRichTextFieldState extends State<AdvancedRichTextField> {
     return AnimatedBuilder(
       animation: Listenable.merge([widget.textStyleState, _styleManager]),
       builder: (context, child) {
-        // 단순한 TextField만 사용 - 체크박스 기능만 지원
+        // 체크박스·굵게 표시는 ChecklistTextEditingController가 담당
         return TextField(
           controller: widget.controller,
           focusNode: widget.focusNode,
@@ -193,8 +194,33 @@ class AdvancedRichTextFieldState extends State<AdvancedRichTextField> {
           cursorWidth: 1.5,
           showCursor: true,
           enableInteractiveSelection: true,
+          // 글자를 드래그해 선택하면 나오는 메뉴에 '굵게' 항목 추가
+          contextMenuBuilder: _buildContextMenu,
         );
       },
+    );
+  }
+
+  /// 텍스트 선택 메뉴 (복사/붙여넣기 등 + 굵게)
+  Widget _buildContextMenu(BuildContext context, EditableTextState editableTextState) {
+    final controller = widget.controller;
+    final items = editableTextState.contextMenuButtonItems.toList();
+    if (controller is ChecklistTextEditingController && !controller.selection.isCollapsed) {
+      final isBold = controller.isSelectionBold;
+      items.insert(
+        0,
+        ContextMenuButtonItem(
+          label: isBold ? '굵게 해제' : '굵게',
+          onPressed: () {
+            controller.toggleBoldOnSelection();
+            editableTextState.hideToolbar();
+          },
+        ),
+      );
+    }
+    return AdaptiveTextSelectionToolbar.buttonItems(
+      anchors: editableTextState.contextMenuAnchors,
+      buttonItems: items,
     );
   }
 

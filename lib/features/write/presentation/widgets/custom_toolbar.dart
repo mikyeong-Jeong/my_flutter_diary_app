@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'checklist_text_editing_controller.dart';
 import 'text_style_state.dart';
 
 /// 삼성 노트 스타일 입력 툴바 위젯
@@ -130,13 +131,16 @@ class _CustomToolbarState extends State<CustomToolbar>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              // 1. 체크박스 삽입/토글 버튼 (유일한 활성 기능)
+              // 1. 체크박스 삽입 버튼
               _buildToolbarButton(
                 icon: Icons.check_box_outlined,
                 onPressed: _handleCheckboxToggle,
                 tooltip: '체크박스 추가',
                 isActive: false,
               ),
+
+              // 2. 선택한 글자 굵게 (선택 구간이 모두 굵으면 활성 표시)
+              _buildBoldButton(),
               
               // TODO: 아래 기능들은 부분 스타일링 문제로 인해 임시 비활성화
               // 추후 RichText 방식 개선 또는 다른 해결책 구현 시 활성화 예정
@@ -374,25 +378,33 @@ class _CustomToolbarState extends State<CustomToolbar>
     }
   }
 
-  /// Bold 토글 처리
+  /// 선택한 글자 굵게 토글 (선택이 없으면 안내)
   void _handleBoldToggle() {
-    if (widget.textController != null) {
-      final selection = widget.textController!.selection;
-      if (selection.isValid && !selection.isCollapsed) {
-        // 선택된 텍스트가 있으면 해당 영역에만 적용
-        widget.textStyleState.toggleBold();
-        widget.onApplyBold?.call(
-          selection.start, 
-          selection.end, 
-          widget.textStyleState.isBold
-        );
-      } else {
-        // 선택된 텍스트가 없으면 이후 입력될 텍스트에 적용
-        widget.textStyleState.toggleBold();
-      }
-    } else {
-      widget.textStyleState.toggleBold();
+    final controller = widget.textController;
+    if (controller is! ChecklistTextEditingController) return;
+    if (!controller.toggleBoldOnSelection()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('굵게 할 글자를 먼저 드래그해서 선택해주세요'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
+  }
+
+  /// 굵게 버튼 (선택이 바뀔 때마다 활성 상태 갱신)
+  Widget _buildBoldButton() {
+    final controller = widget.textController;
+    if (controller is! ChecklistTextEditingController) return const SizedBox.shrink();
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) => _buildToolbarButton(
+        icon: Icons.format_bold,
+        onPressed: _handleBoldToggle,
+        tooltip: '굵게',
+        isActive: controller.isSelectionBold,
+      ),
+    );
   }
 
   /// Underline 토글 처리
