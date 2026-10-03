@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/utils/checklist_utils.dart';
+
 /// 텍스트 스타일 상태 관리 클래스
 /// 
 /// 사용자가 입력 툴바에서 선택한 텍스트 스타일 설정을 관리합니다.
@@ -120,7 +122,7 @@ class TextStyleState extends ChangeNotifier {
     String newText = currentText.replaceRange(
       cursorPosition, 
       cursorPosition, 
-      '□ ' // 더 안정적인 체크박스 문자 사용
+      '${ChecklistUtils.unchecked} ' // 체크박스 전용 기호 (☐)
     );
     
     // 커서를 체크박스 뒤로 이동

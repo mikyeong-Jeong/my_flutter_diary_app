@@ -14,6 +14,8 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
+import '../utils/checklist_utils.dart';
+
 part 'diary_entry.g.dart';
 
 /**
@@ -127,7 +129,13 @@ class DiaryEntry {
    */
   factory DiaryEntry.fromJson(Map<String, dynamic> json) {
     // 기본 JSON 역직렬화 수행
-    final entry = _$DiaryEntryFromJson(json);
+    var entry = _$DiaryEntryFromJson(json);
+
+    // 이전 버전 체크박스(줄 맨 앞 □/■)를 전용 기호(☐/☑)로 변환
+    final migratedContent = ChecklistUtils.migrateLegacy(entry.content);
+    if (migratedContent != entry.content) {
+      entry = entry.copyWith(content: migratedContent, updatedAt: entry.updatedAt);
+    }
     
     // 이전 mood 필드가 있는 경우 moods로 변환
     if (json.containsKey('mood') && json['mood'] is String && json['mood'].isNotEmpty) {

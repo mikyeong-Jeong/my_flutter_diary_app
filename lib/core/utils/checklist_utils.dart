@@ -1,15 +1,32 @@
-/// 체크박스(□/■) 텍스트 처리 유틸리티
+/// 체크박스(☐/☑) 텍스트 처리 유틸리티
 ///
-/// 본문에 '□ 할 일' / '■ 완료한 일' 형태로 저장된 체크박스를
+/// 본문에 '☐ 할 일' / '☑ 완료한 일' 형태로 저장된 체크박스를
 /// 읽기 화면과 편집 화면에서 같은 규칙으로 해석하기 위한 함수들입니다.
 class ChecklistUtils {
   ChecklistUtils._();
 
-  /// 체크되지 않은 체크박스 문자
-  static const String unchecked = '□';
+  /// 체크되지 않은 체크박스 문자 (체크박스 전용 기호 U+2610)
+  ///
+  /// 사용자가 직접 입력하는 일반 네모 기호(□/■)와 구분하기 위해 전용 기호를 사용합니다.
+  static const String unchecked = '\u2610'; // ☐
 
-  /// 체크된 체크박스 문자
-  static const String checked = '■';
+  /// 체크된 체크박스 문자 (체크박스 전용 기호 U+2611)
+  static const String checked = '\u2611'; // ☑
+
+  /// 이전 버전에서 체크박스로 쓰던 문자 (□ / ■)
+  static const String legacyUnchecked = '\u25A1';
+  static const String legacyChecked = '\u25A0';
+
+  /// 이전 버전 체크박스(줄 맨 앞의 '□ ' / '■ ')를 전용 기호로 변환
+  ///
+  /// 툴바가 넣던 형태(줄 맨 앞 + 공백)만 변환하고, 문장 중간에 쓴 네모 기호는 그대로 둡니다.
+  static String migrateLegacy(String text) {
+    if (!text.contains(legacyUnchecked) && !text.contains(legacyChecked)) return text;
+    return text.replaceAllMapped(
+      RegExp('^([ \\t]*)([$legacyUnchecked$legacyChecked]) ', multiLine: true),
+      (m) => '${m[1]}${m[2] == legacyChecked ? checked : unchecked} ',
+    );
+  }
 
   /// 해당 문자가 체크박스인지 확인
   static bool isCheckbox(String char) => char == unchecked || char == checked;
@@ -27,7 +44,7 @@ class ChecklistUtils {
 
   /// 취소선을 그어야 할 구간 목록 ([start, end) 쌍)
   ///
-  /// 체크된 체크박스(■) 바로 뒤부터 사용자가 입력한 줄바꿈(\n) 전까지를
+  /// 체크된 체크박스(☑) 바로 뒤부터 사용자가 입력한 줄바꿈(\n) 전까지를
   /// 완료된 항목으로 보고 취소선 구간으로 반환합니다.
   /// 화면 폭 때문에 자동 줄바꿈된 부분도 같은 줄로 보고 끝까지 취소선을 긋습니다.
   static List<List<int>> checkedRanges(String text) {

@@ -9,7 +9,7 @@ void main() {
     id: 't1',
     date: '2026-10-03',
     title: '할 일',
-    content: '□ 청소',
+    content: '☐ 청소',
     type: EntryType.datedNote,
   );
   final memo = DiaryEntry(id: 'm1', title: '메모', content: '내용', type: EntryType.general);

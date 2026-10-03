@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/checklist_utils.dart';
 import 'rich_text_style_manager.dart';
 import 'text_style_state.dart';
 
@@ -129,13 +130,15 @@ class AdvancedRichTextFieldState extends State<AdvancedRichTextField> {
     final text = widget.controller.text;
     if (text.isEmpty) return;
 
-    // 체크박스 글자(□/■)의 오른쪽 절반을 탭해 커서가 '체크박스|공백' 사이에 놓인 경우에만 토글
+    // 체크박스 글자(☐/☑)의 오른쪽 절반을 탭해 커서가 '체크박스|공백' 사이에 놓인 경우에만 토글
     // (체크박스 왼쪽 = 줄 맨 앞으로 커서를 옮기는 탭은 토글하지 않음)
     if (offset >= 1 && offset < text.length) {
       final prevChar = text[offset - 1];
-      if ((prevChar == '□' || prevChar == '■') && text[offset] == ' ') {
-        final newChar = prevChar == '□' ? '■' : '□';
-        _toggleCheckboxAtPosition(offset - 1, newChar);
+      if (ChecklistUtils.isCheckbox(prevChar) && text[offset] == ' ') {
+        _toggleCheckboxAtPosition(
+          offset - 1,
+          prevChar == ChecklistUtils.unchecked ? ChecklistUtils.checked : ChecklistUtils.unchecked,
+        );
       }
     }
   }

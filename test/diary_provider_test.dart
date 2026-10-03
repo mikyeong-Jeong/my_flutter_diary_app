@@ -50,13 +50,13 @@ void main() {
     await provider.addEntry(DiaryEntry(
       date: '2026-10-03',
       title: '할 일 1',
-      content: '□ 청소',
+      content: '☐ 청소',
       type: EntryType.datedNote,
     ));
     await provider.addEntry(DiaryEntry(
       date: '2026-10-03',
       title: '할 일 2',
-      content: '□ 빨래',
+      content: '☐ 빨래',
       type: EntryType.datedNote,
     ));
     await provider.addEntry(DiaryEntry(title: '메모', content: '내용', type: EntryType.general));
@@ -79,15 +79,15 @@ void main() {
     final note = DiaryEntry(
       date: '2026-10-03',
       title: '할 일',
-      content: '□ 운동',
+      content: '☐ 운동',
       type: EntryType.datedNote,
     );
 
     await provider.updateEntry(note);
-    expect(provider.datedNotes.single.content, '□ 운동');
+    expect(provider.datedNotes.single.content, '☐ 운동');
 
-    await provider.updateEntry(note.copyWith(content: '■ 운동'));
-    expect(provider.datedNotes.single.content, '■ 운동');
+    await provider.updateEntry(note.copyWith(content: '☑ 운동'));
+    expect(provider.datedNotes.single.content, '☑ 운동');
   });
 
   test('deleteEntry로 항목을 삭제한다', () async {
@@ -95,7 +95,7 @@ void main() {
     final note = DiaryEntry(
       date: '2026-10-03',
       title: '할 일',
-      content: '□ 독서',
+      content: '☐ 독서',
       type: EntryType.datedNote,
     );
     await provider.addEntry(note);
@@ -111,7 +111,7 @@ void main() {
     await provider.addEntry(DiaryEntry(
       date: '2026-10-03',
       title: '한글 제목',
-      content: '오늘은 맑음 ☀️\n□ 할 일',
+      content: '오늘은 맑음 ☀️\n☐ 할 일',
       moods: ['😊'],
       tags: ['일상'],
     ));
@@ -128,7 +128,7 @@ void main() {
     final reloaded = await createProvider();
     final entry = reloaded.diaries.single;
     expect(entry.title, '한글 제목');
-    expect(entry.content, '오늘은 맑음 ☀️\n□ 할 일');
+    expect(entry.content, '오늘은 맑음 ☀️\n☐ 할 일');
     expect(entry.moods, ['😊']);
     expect(entry.tags, ['일상']);
   });

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/utils/checklist_utils.dart';
 
-/// 체크된 항목(■ 뒤 텍스트)에 취소선을 그려주는 본문 입력용 컨트롤러
+/// 체크된 항목(☑ 뒤 텍스트)에 취소선을 그려주는 본문 입력용 컨트롤러
 ///
 /// 읽기 화면(ChecklistText)과 같은 규칙으로 취소선을 표시합니다.
 /// 한글 입력 중 조합 구간(밑줄) 표시도 유지합니다.

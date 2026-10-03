@@ -38,18 +38,51 @@ TextStyle? styleOfSpan(InlineSpan root, String text) {
 void main() {
   group('ChecklistUtils', () {
     test('toggleAt은 체크박스만 토글한다', () {
-      expect(ChecklistUtils.toggleAt('□ 우유', 0), '■ 우유');
-      expect(ChecklistUtils.toggleAt('■ 우유', 0), '□ 우유');
-      expect(ChecklistUtils.toggleAt('□ 우유', 2), '□ 우유');
+      expect(ChecklistUtils.toggleAt('☐ 우유', 0), '☑ 우유');
+      expect(ChecklistUtils.toggleAt('☑ 우유', 0), '☐ 우유');
+      expect(ChecklistUtils.toggleAt('☐ 우유', 2), '☐ 우유');
     });
 
-    test('checkedRanges는 ■ 뒤부터 사용자가 입력한 줄바꿈 전까지를 반환한다', () {
-      const text = '■ 우유\n□ 계란\n메모 ■ 빵 □ 잼\n■ 아주 긴 항목은 화면에서 자동 줄바꿈되어도 끝까지';
+    test('checkedRanges는 ☑ 뒤부터 사용자가 입력한 줄바꿈 전까지를 반환한다', () {
+      const text = '☑ 우유\n☐ 계란\n메모 ☑ 빵 ☐ 잼\n☑ 아주 긴 항목은 화면에서 자동 줄바꿈되어도 끝까지';
       final ranges = ChecklistUtils.checkedRanges(text);
       expect(
         ranges.map((r) => text.substring(r[0], r[1])).toList(),
-        [' 우유', ' 빵 □ 잼', ' 아주 긴 항목은 화면에서 자동 줄바꿈되어도 끝까지'],
+        [' 우유', ' 빵 ☐ 잼', ' 아주 긴 항목은 화면에서 자동 줄바꿈되어도 끝까지'],
       );
+    });
+  });
+
+  group('체크박스 전용 기호', () {
+    test('직접 입력한 일반 네모 기호(□/■)는 체크박스로 인식하지 않는다', () {
+      expect(ChecklistUtils.isCheckbox('\u25A1'), isFalse); // □
+      expect(ChecklistUtils.isCheckbox('\u25A0'), isFalse); // ■
+      expect(ChecklistUtils.toggleAt('\u25A1 네모 기호', 0), '\u25A1 네모 기호');
+      expect(ChecklistUtils.checkedRanges('\u25A0 강조 표시'), isEmpty);
+    });
+
+    test('이전 버전 체크박스(줄 맨 앞 □/■)만 전용 기호로 변환한다', () {
+      const legacy = '\u25A1 우유\n  \u25A0 계란\n가격표 \u25A1 \u25A0 표시\n\u25A1빵';
+      expect(
+        ChecklistUtils.migrateLegacy(legacy),
+        '☐ 우유\n  ☑ 계란\n가격표 \u25A1 \u25A0 표시\n\u25A1빵',
+      );
+    });
+
+    test('예전 데이터를 불러오면 체크박스가 변환되고 수정 시간은 유지된다', () {
+      final updatedAt = DateTime(2026, 9, 1, 8, 0);
+      final legacyJson = DiaryEntry(
+        title: '장보기',
+        content: '\u25A1 우유\n\u25A0 계란',
+        type: EntryType.datedNote,
+        date: '2026-09-01',
+        updatedAt: updatedAt,
+      ).toJson();
+
+      final entry = DiaryEntry.fromJson(legacyJson);
+      expect(entry.content, '☐ 우유\n☑ 계란');
+      expect(entry.updatedAt, updatedAt);
+      expect(ChecklistUtils.checkedRanges(entry.content), isNotEmpty);
     });
   });
 
@@ -58,26 +91,40 @@ void main() {
       String? changed;
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
-          body: ChecklistText('□ 우유\n■ 계란', onChanged: (v) => changed = v),
+          body: ChecklistText('☐ 우유\n☑ 계란', onChanged: (v) => changed = v),
         ),
       ));
 
-      await tester.tapOnText(find.textRange.ofSubstring('□'));
-      expect(changed, '■ 우유\n■ 계란');
+      await tester.tapOnText(find.textRange.ofSubstring('☐'));
+      expect(changed, '☑ 우유\n☑ 계란');
+    });
+
+    testWidgets('일반 네모 기호(□/■)는 탭해도 바뀌지 않고 취소선도 없다', (tester) async {
+      String? changed;
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: ChecklistText('\u25A0 강조 문장\n☐ 할 일', onChanged: (v) => changed = v),
+        ),
+      ));
+
+      await tester.tapOnText(find.textRange.ofSubstring('\u25A0'));
+      expect(changed, isNull);
+      final span = contentSpan(tester, '☐');
+      expect(styleOfSpan(span, '\u25A0 강조 문장\n')?.decoration, isNot(TextDecoration.lineThrough));
     });
 
     testWidgets('체크된 항목에만 취소선을 그린다', (tester) async {
       await tester.pumpWidget(const MaterialApp(
-        home: Scaffold(body: ChecklistText('□ 우유\n■ 계란')),
+        home: Scaffold(body: ChecklistText('☐ 우유\n☑ 계란')),
       ));
 
-      final span = contentSpan(tester, '□');
+      final span = contentSpan(tester, '☐');
       expect(styleOfSpan(span, ' 계란')?.decoration, TextDecoration.lineThrough);
       expect(styleOfSpan(span, ' 우유\n')?.decoration, isNot(TextDecoration.lineThrough));
       // 체크박스는 본문과 같은 글자색 (테마 강조색으로 바뀌지 않음)
       final baseColor = styleOfSpan(span, ' 우유\n')?.color;
-      expect(styleOfSpan(span, '□')?.color, baseColor);
-      expect(styleOfSpan(span, '■')?.color, baseColor);
+      expect(styleOfSpan(span, '☐')?.color, baseColor);
+      expect(styleOfSpan(span, '☑')?.color, baseColor);
     });
   });
 
@@ -86,7 +133,7 @@ void main() {
       await tester.pumpWidget(const MaterialApp(home: Scaffold(body: SizedBox())));
       final context = tester.element(find.byType(SizedBox));
 
-      final controller = ChecklistTextEditingController(text: '■ 완료\n□ 할 일');
+      final controller = ChecklistTextEditingController(text: '☑ 완료\n☐ 할 일');
       var span = controller.buildTextSpan(context: context, withComposing: true);
       expect(styleOfSpan(span, ' 완료')?.decoration, TextDecoration.lineThrough);
 
@@ -126,7 +173,7 @@ void main() {
       final note = DiaryEntry(
         date: '2026-10-03',
         title: '장보기',
-        content: '□ 우유\n□ 계란',
+        content: '☐ 우유\n☐ 계란',
         type: EntryType.datedNote,
         updatedAt: DateTime(2026, 10, 1, 9, 0),
       );
@@ -151,24 +198,24 @@ void main() {
       await tester.pumpAndSettle();
 
       // 첫 번째 체크박스 탭
-      await tester.tapOnText(find.textRange.ofSubstring('□').first);
+      await tester.tapOnText(find.textRange.ofSubstring('☐').first);
       // 저장(파일 쓰기)이 끝날 때까지 실제 시간을 흘려보내며 대기
-      for (int i = 0; i < 10 && provider.datedNotes.single.content.startsWith('□'); i++) {
+      for (int i = 0; i < 10 && provider.datedNotes.single.content.startsWith('☐'); i++) {
         await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
         await tester.pump();
       }
       await tester.pumpAndSettle();
 
-      expect(provider.datedNotes.single.content, '■ 우유\n□ 계란');
+      expect(provider.datedNotes.single.content, '☑ 우유\n☐ 계란');
       // 체크해도 수정 시간은 바뀌지 않음
       expect(provider.datedNotes.single.updatedAt, DateTime(2026, 10, 1, 9, 0));
-      final span = contentSpan(tester, '□');
+      final span = contentSpan(tester, '☐');
       expect(styleOfSpan(span, ' 우유')?.decoration, TextDecoration.lineThrough);
 
       // 다시 불러와도 체크 상태가 유지됨
       final reloaded = DiaryProvider();
       await tester.runAsync(() => reloaded.loadEntries());
-      expect(reloaded.datedNotes.single.content, '■ 우유\n□ 계란');
+      expect(reloaded.datedNotes.single.content, '☑ 우유\n☐ 계란');
       expect(reloaded.datedNotes.single.updatedAt, DateTime(2026, 10, 1, 9, 0));
     });
   });

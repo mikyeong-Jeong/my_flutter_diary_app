@@ -17,7 +17,7 @@ class WriteScreen extends StatefulWidget {
 
 class _WriteScreenState extends State<WriteScreen> with WidgetsBindingObserver, KeyboardAwareToolbarMixin {
   final _titleController = TextEditingController();
-  // 체크된 항목(■)에 취소선을 표시하는 본문 컨트롤러
+  // 체크된 항목(☑)에 취소선을 표시하는 본문 컨트롤러
   final _contentController = ChecklistTextEditingController();
   final _customTagController = TextEditingController();
   final _customEmojiController = TextEditingController();

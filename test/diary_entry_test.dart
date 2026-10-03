@@ -7,7 +7,7 @@ void main() {
       final entry = DiaryEntry(
         date: '2026-10-03',
         title: '장보기',
-        content: '□ 우유\n■ 계란',
+        content: '☐ 우유\n☑ 계란',
         type: EntryType.datedNote,
       );
 
@@ -16,7 +16,7 @@ void main() {
       expect(restored.id, entry.id);
       expect(restored.type, EntryType.datedNote);
       expect(restored.date, '2026-10-03');
-      expect(restored.content, '□ 우유\n■ 계란');
+      expect(restored.content, '☐ 우유\n☑ 계란');
     });
 
     test('이전 버전의 mood/icons 필드를 moods/customEmojis로 변환한다', () {

@@ -100,7 +100,8 @@ adb shell am start -W -a android.intent.action.VIEW -n com.diary.app/.MainActivi
 - `DiaryEntry`: Core data model with JSON serialization
   - `EntryType`: `dated` (diary), `general` (memo), `datedNote` (to-do, no emoji/tags)
   - `DiaryEntry.compareForList`: shared sort order (diary → to-do → memo)
-- Checklists: content stores `□` (unchecked) / `■` (checked); text after `■` up to the user's line break (`\n`) is struck through
+- Checklists: content stores dedicated symbols `☐` (U+2610, unchecked) / `☑` (U+2611, checked); text after `☑` up to the user's line break (`\n`) is struck through. Plain `□`/`■` typed by users are ordinary text
+  - Legacy data: line-start `□ `/`■ ` (old toolbar format) is converted to `☐`/`☑` in `DiaryEntry.fromJson` (`ChecklistUtils.migrateLegacy`)
   - Rules: `lib/core/utils/checklist_utils.dart`
   - Read screens: `lib/core/widgets/checklist_text.dart` (tap to toggle + save)
   - Edit screens: `ChecklistTextEditingController` (strikethrough while editing)
