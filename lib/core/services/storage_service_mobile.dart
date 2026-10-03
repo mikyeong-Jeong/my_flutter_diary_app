@@ -20,6 +20,7 @@ import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import '../models/diary_entry.dart';
 import '../models/app_settings.dart';
+import 'calculator_storage.dart';
 
 /**
  * 모바일용 스토리지 서비스 클래스
@@ -323,6 +324,8 @@ class StorageService {
       final backupData = {
         'entries': entries.map((e) => e.toJson()).toList(),
         'settings': settings.toJson(),
+        // 계산기 탭 데이터 (SharedPreferences에 별도 저장)
+        'calculatorSheets': await CalculatorStorage.exportForBackup(),
         'exportDate': DateTime.now().toIso8601String(),
         'version': '2.0', // 새 버전
       };
@@ -376,6 +379,11 @@ class StorageService {
         }
         
         await _saveAllEntries(entries);
+      }
+      
+      // 계산기 데이터 가져오기 (계산기 기능 이전 백업에는 없으므로 있을 때만 교체)
+      if (backupData['calculatorSheets'] is List) {
+        await CalculatorStorage.restoreFromBackup(backupData['calculatorSheets'] as List);
       }
       
       // 설정 가져오기

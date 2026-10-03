@@ -89,7 +89,7 @@ adb shell am start -W -a android.intent.action.VIEW -n com.diary.app/.MainActivi
 #### State Management (Provider Pattern)
 - `DiaryProvider`: Main business logic and data management
 - `ThemeProvider`: Theme switching (light/dark mode)
-- `CalculatorProvider`: Calculator tab sheets (stored in SharedPreferences via `CalculatorStorage`, not part of diary backup)
+- `CalculatorProvider`: Calculator tab sheets (stored in SharedPreferences via `CalculatorStorage`, auto-saved on every edit, included in backup as `calculatorSheets`)
 
 #### Platform-Specific Storage
 - **Mobile**: File system storage (`storage_service_mobile.dart`)  

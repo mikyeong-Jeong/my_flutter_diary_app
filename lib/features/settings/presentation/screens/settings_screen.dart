@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/diary_provider.dart';
+import '../../../../core/providers/calculator_provider.dart';
 import '../../../../core/models/diary_entry.dart';
 import '../../../../core/utils/download_helper.dart';
 import '../../../../core/utils/json_utils.dart';
@@ -1077,6 +1078,8 @@ class SettingsScreen extends StatelessWidget {
                           
                           await context.read<DiaryProvider>().importBackup(backupData);
                           await context.read<ThemeProvider>().importBackup(backupData);
+                          // 복원된 계산기 데이터 다시 불러오기
+                          await context.read<CalculatorProvider>().loadSheets();
                           
                           Navigator.pop(context); // 프로그레스 닫기
                           
@@ -1169,6 +1172,10 @@ class SettingsScreen extends StatelessWidget {
                   
                   try {
                     await context.read<DiaryProvider>().importBackup(cleanContent);
+                    // 복원된 계산기 데이터 다시 불러오기
+                    if (context.mounted) {
+                      await context.read<CalculatorProvider>().loadSheets();
+                    }
                     
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(

@@ -7,6 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:diary_app/core/models/diary_entry.dart';
 import 'package:diary_app/core/providers/diary_provider.dart';
 import 'package:diary_app/core/utils/json_utils.dart';
+import 'package:diary_app/core/models/calculator_row.dart';
+import 'package:diary_app/core/models/calculator_sheet.dart';
+import 'package:diary_app/core/services/calculator_storage.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -128,5 +131,41 @@ void main() {
     expect(entry.content, '오늘은 맑음 ☀️\n□ 할 일');
     expect(entry.moods, ['😊']);
     expect(entry.tags, ['일상']);
+  });
+
+  test('백업에 계산기 데이터가 포함되고 복원된다', () async {
+    final provider = await createProvider();
+    await CalculatorStorage.save([
+      CalculatorSheet(
+        id: 'c1',
+        title: '10월 생활비',
+        budget: 300000,
+        rows: const [CalculatorRow(id: 'r1', date: '2026-10-03', item: '장보기', amount: 45000)],
+      ),
+    ]);
+
+    final backup = await provider.exportBackup();
+    expect((jsonDecode(backup) as Map)['calculatorSheets'], hasLength(1));
+
+    // 계산기 데이터를 지운 뒤 복원
+    await CalculatorStorage.save([]);
+    await provider.importBackup(backup);
+
+    final restored = await CalculatorStorage.load();
+    expect(restored.single.title, '10월 생활비');
+    expect(restored.single.budget, 300000);
+    expect(restored.single.rows.single.item, '장보기');
+    expect(restored.single.remaining, 255000);
+  });
+
+  test('계산기 기능 이전의 백업으로 복원하면 기존 계산기 데이터는 유지된다', () async {
+    final provider = await createProvider();
+    await CalculatorStorage.save([CalculatorSheet(id: 'c1', title: '유지될 계산')]);
+
+    // calculatorSheets 키가 없는 예전 형식 백업
+    final oldBackup = jsonEncode({'entries': [], 'settings': {}, 'version': '2.0'});
+    await provider.importBackup(oldBackup);
+
+    expect((await CalculatorStorage.load()).single.title, '유지될 계산');
   });
 }

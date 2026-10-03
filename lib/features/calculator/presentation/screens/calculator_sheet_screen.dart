@@ -11,7 +11,7 @@ import '../../../../core/providers/calculator_provider.dart';
 ///
 /// 상단에 제목과 예산을 입력하고, 한 줄에 날짜·항목·금액(지출)을 입력합니다.
 /// 행을 추가/삭제할 수 있고 하단에 지출 총액과 남은 금액(예산 - 지출)이 고정 표시됩니다.
-/// 우측 상단 저장 버튼을 눌러야 저장됩니다. (할 일/메모 작성 화면과 동일)
+/// 입력 내용은 바뀔 때마다 자동 저장됩니다. (아무것도 입력하지 않은 새 계산은 저장하지 않음)
 class CalculatorSheetScreen extends StatefulWidget {
   const CalculatorSheetScreen({super.key, this.sheet});
 
@@ -27,7 +27,8 @@ class _CalculatorSheetScreenState extends State<CalculatorSheetScreen> {
 
   late CalculatorSheet _sheet;
   late List<CalculatorRow> _rows;
-  late bool _isEditing;
+  /// 화면을 닫을 때(dispose)도 사용하기 위해 보관
+  late final CalculatorProvider _provider;
   late final TextEditingController _titleController;
   late final TextEditingController _budgetController;
 
@@ -38,12 +39,15 @@ class _CalculatorSheetScreenState extends State<CalculatorSheetScreen> {
   final Map<String, TextEditingController> _itemControllers = {};
   final Map<String, TextEditingController> _amountControllers = {};
 
+  /// 줄별 항목 입력칸 포커스 (행 추가 시 새 줄로 바로 이동)
+  final Map<String, FocusNode> _itemFocusNodes = {};
+
   @override
   void initState() {
     super.initState();
     _sheet = widget.sheet ?? CalculatorSheet();
     // 이미 저장된 계산인지로 수정 여부 판단
-    _isEditing = context.read<CalculatorProvider>().contains(_sheet.id);
+    _provider = context.read<CalculatorProvider>();
     _titleController = TextEditingController(text: _sheet.title);
     _budget = _sheet.budget;
     _budgetController = TextEditingController(
@@ -55,10 +59,20 @@ class _CalculatorSheetScreenState extends State<CalculatorSheetScreen> {
 
   @override
   void dispose() {
+    // 내용을 모두 지우고 나가면 빈 계산이 목록에 남지 않도록 삭제
+    // (dispose 중에는 위젯 트리가 잠겨 있으므로 목록 갱신은 다음 마이크로태스크에서)
+    if (_isEmpty(_currentSheet()) && _provider.contains(_sheet.id)) {
+      final provider = _provider;
+      final id = _sheet.id;
+      Future.microtask(() => provider.deleteSheet(id));
+    }
     _titleController.dispose();
     _budgetController.dispose();
     for (final controller in [..._itemControllers.values, ..._amountControllers.values]) {
       controller.dispose();
+    }
+    for (final focusNode in _itemFocusNodes.values) {
+      focusNode.dispose();
     }
     super.dispose();
   }
@@ -74,16 +88,24 @@ class _CalculatorSheetScreenState extends State<CalculatorSheetScreen> {
     setState(() {
       _rows = [for (final r in _rows) r.id == row.id ? row : r];
     });
+    _autoSave();
   }
 
   void _addRow() {
-    setState(() => _rows = [..._rows, _newRow()]);
+    final row = _newRow();
+    setState(() => _rows = [..._rows, row]);
+    // 새 줄의 항목 입력칸으로 커서 이동 (포커스되면 화면에 보이도록 자동 스크롤)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _itemFocusNodes[row.id]?.requestFocus();
+    });
   }
 
   void _deleteRow(CalculatorRow row) {
     _itemControllers.remove(row.id)?.dispose();
     _amountControllers.remove(row.id)?.dispose();
+    _itemFocusNodes.remove(row.id)?.dispose();
     setState(() => _rows = _rows.where((r) => r.id != row.id).toList());
+    _autoSave();
   }
 
   Future<void> _selectDate(CalculatorRow row) async {
@@ -98,23 +120,27 @@ class _CalculatorSheetScreenState extends State<CalculatorSheetScreen> {
     }
   }
 
-  /// 저장
-  Future<void> _save() async {
-    final title = _titleController.text.trim();
-    // 항목도 금액도 없는 빈 줄은 저장하지 않음
-    final rows = _rows.where((r) => r.item.trim().isNotEmpty || r.amount != 0).toList();
+  /// 저장할 계산 데이터 (항목도 금액도 없는 빈 줄은 제외)
+  CalculatorSheet _currentSheet() {
+    return _sheet.copyWith(
+      title: _titleController.text.trim(),
+      budget: _budget,
+      rows: _rows.where((r) => r.item.trim().isNotEmpty || r.amount != 0).toList(),
+      updatedAt: DateTime.now(),
+    );
+  }
 
-    if (title.isEmpty && rows.isEmpty && _budget == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('제목이나 내용을 입력해주세요'), backgroundColor: Colors.orange),
-      );
-      return;
-    }
+  /// 제목·예산·내용이 모두 비어 있는지 여부
+  bool _isEmpty(CalculatorSheet sheet) =>
+      sheet.title.isEmpty && sheet.budget == 0 && sheet.rows.isEmpty;
 
-    await context.read<CalculatorProvider>().saveSheet(
-          _sheet.copyWith(title: title, budget: _budget, rows: rows, updatedAt: DateTime.now()),
-        );
-    if (mounted) Navigator.pop(context);
+  /// 자동 저장 (입력이 바뀔 때마다 호출)
+  ///
+  /// 아무것도 입력하지 않은 새 계산은 목록에 만들지 않습니다.
+  void _autoSave() {
+    final sheet = _currentSheet();
+    if (_isEmpty(sheet) && !_provider.contains(sheet.id)) return;
+    _provider.saveSheet(sheet);
   }
 
   /// 삭제
@@ -158,14 +184,16 @@ class _CalculatorSheetScreenState extends State<CalculatorSheetScreen> {
   Widget build(BuildContext context) {
     final total = CalculatorRow.totalOf(_rows);
     final remaining = _budget - total;
+    // 자동 저장으로 목록에 생기면 삭제 버튼 표시
+    final isSaved = context.watch<CalculatorProvider>().contains(_sheet.id);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? '계산 수정' : '새 계산'),
+        // 입력 내용은 자동 저장되므로 별도 저장 버튼 없음
+        title: Text(isSaved ? '계산 수정' : '새 계산'),
         actions: [
-          if (_isEditing)
+          if (isSaved)
             IconButton(icon: const Icon(Icons.delete), tooltip: '삭제', onPressed: _delete),
-          IconButton(icon: const Icon(Icons.check), tooltip: '저장', onPressed: _save),
         ],
       ),
       body: Column(
@@ -181,6 +209,7 @@ class _CalculatorSheetScreenState extends State<CalculatorSheetScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: TextField(
                     controller: _titleController,
+                    onChanged: (_) => _autoSave(),
                     decoration: InputDecoration(
                       hintText: '제목',
                       prefixIcon: const Icon(Icons.title),
@@ -207,6 +236,7 @@ class _CalculatorSheetScreenState extends State<CalculatorSheetScreen> {
                     ),
                     onChanged: (value) {
                       setState(() => _budget = int.tryParse(value.replaceAll(',', '')) ?? 0);
+                      _autoSave();
                     },
                   ),
                 ),
@@ -238,12 +268,8 @@ class _CalculatorSheetScreenState extends State<CalculatorSheetScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       for (final row in _rows) _buildRow(context, row),
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed: _addRow,
-                        icon: const Icon(Icons.add),
-                        label: const Text('행 추가'),
-                      ),
+                      // 마지막 줄 바로 아래, 표의 빈 줄처럼 보이는 행 추가 버튼
+                      _buildAddRowButton(context),
                     ],
                   ),
                 ),
@@ -318,6 +344,41 @@ class _CalculatorSheetScreenState extends State<CalculatorSheetScreen> {
     );
   }
 
+  /// 행 추가 버튼: 입력 줄과 같은 높이/폭의 빈 줄 형태
+  Widget _buildAddRowButton(BuildContext context) {
+    final color = Theme.of(context).primaryColor;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, right: 40),
+      child: Material(
+        color: color.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(4),
+        child: InkWell(
+          key: const Key('calculator_add_row'),
+          onTap: _addRow,
+          borderRadius: BorderRadius.circular(4),
+          child: Container(
+            height: 48,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: color.withOpacity(0.5)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add, size: 20, color: color),
+                const SizedBox(width: 6),
+                Text(
+                  '행 추가',
+                  style: TextStyle(color: color, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   TextStyle? _headerStyle(BuildContext context) {
     return Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold);
   }
@@ -349,6 +410,8 @@ class _CalculatorSheetScreenState extends State<CalculatorSheetScreen> {
           Expanded(
             child: TextField(
               controller: _itemController(row),
+              focusNode: _itemFocusNodes.putIfAbsent(row.id, () => FocusNode()),
+              textInputAction: TextInputAction.next,
               decoration: const InputDecoration(
                 hintText: '항목',
                 isDense: true,

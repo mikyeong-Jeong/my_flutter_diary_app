@@ -27,6 +27,20 @@ class CalculatorStorage {
     }
   }
 
+  /// 백업 파일에 넣을 계산 목록 (JSON)
+  static Future<List<Map<String, dynamic>>> exportForBackup() async {
+    final sheets = await load();
+    return sheets.map((s) => s.toJson()).toList();
+  }
+
+  /// 백업 파일의 계산 목록으로 교체
+  static Future<void> restoreFromBackup(List<dynamic> data) async {
+    final sheets = data
+        .map((e) => CalculatorSheet.fromJson(e as Map<String, dynamic>))
+        .toList();
+    await save(sheets);
+  }
+
   /// 계산 목록 저장
   static Future<void> save(List<CalculatorSheet> sheets) async {
     final prefs = await SharedPreferences.getInstance();

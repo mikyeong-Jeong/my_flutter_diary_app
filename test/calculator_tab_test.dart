@@ -87,8 +87,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
 
-    // 저장 → 목록으로 돌아옴
-    await tester.tap(find.byTooltip('저장'));
+    // 저장 버튼 없이 뒤로 가기만 해도 자동 저장되어 목록에 표시
+    expect(find.byTooltip('저장'), findsNothing);
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.text('10월 생활비'), findsOneWidget);
     expect(find.text('지출 16,500원'), findsOneWidget);
@@ -123,11 +124,11 @@ void main() {
     expect(find.text('80,000'), findsOneWidget);
     expect(totalText(tester), '105,000원');
 
-    // 첫 번째 행 삭제 후 저장
+    // 첫 번째 행 삭제 (자동 저장)
     await tester.tap(find.byTooltip('행 삭제').first);
     await tester.pumpAndSettle();
     expect(totalText(tester), '25,000원');
-    await tester.tap(find.byTooltip('저장'));
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.text('지출 25,000원'), findsOneWidget);
 
@@ -204,8 +205,8 @@ void main() {
     final remainingWidget = tester.widget<Text>(find.byKey(const Key('calculator_remaining')));
     expect(remainingWidget.style?.color, Colors.red);
 
-    // 저장 후 목록에 지출/남은 금액 표시, 다시 열면 예산 유지
-    await tester.tap(find.byTooltip('저장'));
+    // 목록에 지출/남은 금액 표시, 다시 열면 예산 유지
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.text('지출 51,000원 · 남은 -1,000원'), findsOneWidget);
 
@@ -213,6 +214,62 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('50,000'), findsOneWidget);
     expect(remainingText(tester), '-1,000원');
+  });
+
+  testWidgets('입력하는 즉시 자동 저장되고, 빈 계산은 목록에 남지 않는다', (tester) async {
+    await pumpCalculatorTab(tester);
+
+    // 아무것도 입력하지 않고 나가면 계산이 만들어지지 않음
+    await tester.tap(find.byTooltip('계산 추가'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('작성된 계산이 없습니다'), findsOneWidget);
+    expect(await tester.runAsync(() => CalculatorStorage.load()), isEmpty);
+
+    // 입력하면 화면을 나가기 전에도 저장소에 바로 저장됨
+    await tester.tap(find.byTooltip('계산 추가'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, '제목'), '자동 저장');
+    await tester.enterText(amountField(0), '7000');
+    await tester.pump();
+    var saved = await tester.runAsync(() => CalculatorStorage.load());
+    expect(saved!.single.title, '자동 저장');
+    expect(saved.single.total, 7000);
+    expect(find.byTooltip('삭제'), findsOneWidget); // 저장되면 삭제 버튼 표시
+
+    // 내용을 모두 지우고 나가면 목록에서 제거
+    await tester.enterText(find.widgetWithText(TextField, '자동 저장'), '');
+    await tester.enterText(amountField(0), '');
+    await tester.pump();
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('작성된 계산이 없습니다'), findsOneWidget);
+    saved = await tester.runAsync(() => CalculatorStorage.load());
+    expect(saved, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('행 추가 버튼은 마지막 줄 바로 아래에 있고, 누르면 새 줄 항목에 커서가 간다', (tester) async {
+    await pumpCalculatorTab(tester);
+    await tester.tap(find.byTooltip('계산 추가'));
+    await tester.pumpAndSettle();
+
+    final addButton = find.byKey(const Key('calculator_add_row'));
+    // 마지막 줄(첫 줄) 바로 아래 위치
+    final lastRowBottom = tester.getBottomLeft(itemField(0)).dy;
+    final buttonTop = tester.getTopLeft(addButton).dy;
+    expect(buttonTop, greaterThan(lastRowBottom));
+    expect(buttonTop - lastRowBottom, lessThan(24));
+
+    await tester.tap(addButton);
+    await tester.pumpAndSettle();
+
+    // 새 줄(두 번째)의 항목 입력칸에 포커스
+    final secondItem = tester.widget<TextField>(itemField(1));
+    expect(secondItem.focusNode!.hasFocus, isTrue);
+    // 버튼은 다시 새 마지막 줄 아래로 이동
+    expect(tester.getTopLeft(addButton).dy, greaterThan(tester.getBottomLeft(itemField(1)).dy));
   });
 
   test('CalculatorSheet 합계와 JSON 변환', () {
