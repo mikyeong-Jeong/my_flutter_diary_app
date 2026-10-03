@@ -74,6 +74,10 @@ void main() {
       final span = contentSpan(tester, '□');
       expect(styleOfSpan(span, ' 계란')?.decoration, TextDecoration.lineThrough);
       expect(styleOfSpan(span, ' 우유\n')?.decoration, isNot(TextDecoration.lineThrough));
+      // 체크박스는 본문과 같은 글자색 (테마 강조색으로 바뀌지 않음)
+      final baseColor = styleOfSpan(span, ' 우유\n')?.color;
+      expect(styleOfSpan(span, '□')?.color, baseColor);
+      expect(styleOfSpan(span, '■')?.color, baseColor);
     });
   });
 

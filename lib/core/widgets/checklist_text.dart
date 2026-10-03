@@ -53,10 +53,9 @@ class _ChecklistTextState extends State<ChecklistText> {
       decoration: TextDecoration.lineThrough,
       color: (baseStyle.color ?? Colors.black).withOpacity(0.5),
     );
+    // 체크박스 색상은 본문 글자색 그대로 (편집 화면과 동일), 탭하기 쉽도록 조금 크게 표시
     final checkboxStyle = baseStyle.copyWith(
-      // 탭하기 쉽도록 체크박스 문자는 조금 크게 표시
       fontSize: (baseStyle.fontSize ?? 14) * 1.25,
-      color: Theme.of(context).primaryColor,
     );
 
     bool isChecked(int index) =>
