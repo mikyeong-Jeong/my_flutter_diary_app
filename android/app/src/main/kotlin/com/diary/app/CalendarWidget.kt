@@ -120,7 +120,7 @@ class CalendarWidget : AppWidgetProvider() {
         if (layoutId != R.layout.calendar_widget_small) {
             // 달력 탭 (현재 선택됨)
             val calendarIntent = Intent(context, MainActivity::class.java).apply {
-                data = Uri.parse("diary://home?tab=0")
+                data = Uri.parse("diaryapp://home?tab=0")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
             val calendarPendingIntent = PendingIntent.getActivity(
@@ -133,7 +133,7 @@ class CalendarWidget : AppWidgetProvider() {
             
             // 일기 탭
             val diaryIntent = Intent(context, MainActivity::class.java).apply {
-                data = Uri.parse("diary://home?tab=1")
+                data = Uri.parse("diaryapp://home?tab=1")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
             val diaryPendingIntent = PendingIntent.getActivity(
@@ -146,7 +146,7 @@ class CalendarWidget : AppWidgetProvider() {
             
             // 메모 탭
             val memoIntent = Intent(context, MainActivity::class.java).apply {
-                data = Uri.parse("diary://home?tab=2")
+                data = Uri.parse("diaryapp://home?tab=2")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
             val memoPendingIntent = PendingIntent.getActivity(
@@ -159,7 +159,7 @@ class CalendarWidget : AppWidgetProvider() {
             
             // 계산기 탭
             val calculatorIntent = Intent(context, MainActivity::class.java).apply {
-                data = Uri.parse("diary://home?tab=3")
+                data = Uri.parse("diaryapp://home?tab=3")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
             val calculatorPendingIntent = PendingIntent.getActivity(
@@ -252,13 +252,13 @@ class CalendarWidget : AppWidgetProvider() {
                         val entryId = entryIdsByDate[dateString]
                         if (entryId != null) {
                             // ID가 있으면 직접 해당 일기로 이동
-                            data = Uri.parse("diary://viewmemo?id=$entryId")
+                            data = Uri.parse("diaryapp://viewmemo?id=$entryId")
                         } else {
                             // ID가 없으면 날짜로 검색
-                            data = Uri.parse("diary://viewdate?date=$dateString")
+                            data = Uri.parse("diaryapp://viewdate?date=$dateString")
                         }
                     } else {
-                        data = Uri.parse("diary://write?date=$dateString")
+                        data = Uri.parse("diaryapp://write?date=$dateString")
                     }
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 }

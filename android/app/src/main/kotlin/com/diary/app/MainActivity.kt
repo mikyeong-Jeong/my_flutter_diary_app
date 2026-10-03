@@ -52,7 +52,7 @@ class MainActivity : FlutterActivity() {
     private fun handleIntent(intent: Intent?) {
         // 위젯에서 전달된 딥링크 처리
         intent?.data?.let { uri ->
-            if (uri.scheme == "diary") {
+            if (uri.scheme == "diaryapp") {
                 pendingDeeplink = uri.toString()
                 // Flutter 엔진이 준비되면 딥링크 전달
                 flutterEngine?.let { engine ->

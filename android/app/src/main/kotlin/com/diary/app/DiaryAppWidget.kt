@@ -48,7 +48,7 @@ class DiaryAppWidget : AppWidgetProvider() {
                         
                         // 각 항목에 대한 클릭 이벤트 설정
                         val entryIntent = Intent(context, MainActivity::class.java).apply {
-                            data = Uri.parse("diary://viewmemo?id=$entryId")
+                            data = Uri.parse("diaryapp://viewmemo?id=$entryId")
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                         }
                         val entryPendingIntent = PendingIntent.getActivity(
@@ -65,7 +65,7 @@ class DiaryAppWidget : AppWidgetProvider() {
                 
                 // 위젯 클릭 시 앱 열기
                 val intent = Intent(context, MainActivity::class.java).apply {
-                    data = Uri.parse("diary://openapp")
+                    data = Uri.parse("diaryapp://openapp")
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 }
                 val pendingIntent = PendingIntent.getActivity(
@@ -78,7 +78,7 @@ class DiaryAppWidget : AppWidgetProvider() {
                 
                 // 새 일기 작성 버튼
                 val newEntryIntent = Intent(context, MainActivity::class.java).apply {
-                    data = Uri.parse("diary://newentry")
+                    data = Uri.parse("diaryapp://newentry")
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 }
                 val newEntryPendingIntent = PendingIntent.getActivity(

@@ -89,6 +89,7 @@ void main() async {
 /// 딥링크 처리 함수
 /// MainActivity에서 전달받은 딥링크를 처리합니다.
 void _handleDeeplink(Uri uri) {
+  print('🔗 딥링크 처리: ${uri.toString()}'); // 디버깅용 로그
   if (MyApp.navigatorKey.currentState != null) {
     if (uri.host == 'home') {
       // 홈 화면의 특정 탭으로 이동
@@ -110,16 +111,24 @@ void _handleDeeplink(Uri uri) {
         final context = MyApp.navigatorKey.currentContext;
         if (context != null) {
           final diaryProvider = context.read<DiaryProvider>();
-          final entry = diaryProvider.entries.firstWhere(
-            (e) => e.id == memoId,
-            orElse: () => diaryProvider.entries.first,
-          );
+          try {
+            final entry = diaryProvider.entries.firstWhere(
+              (e) => e.id == memoId,
+            );
 
-          // 읽기 화면으로 이동
-          MyApp.navigatorKey.currentState?.pushNamed(
-            '/read',
-            arguments: entry,
-          );
+            // 읽기 화면으로 이동
+            MyApp.navigatorKey.currentState?.pushNamed(
+              '/read',
+              arguments: entry,
+            );
+          } catch (e) {
+            // 메모를 찾을 수 없는 경우 홈 화면으로 이동
+            MyApp.navigatorKey.currentState?.pushNamedAndRemoveUntil(
+              '/',
+              (route) => false,
+              arguments: {'tabIndex': 1}, // 메모 탭으로 이동
+            );
+          }
         }
       }
     } else if (uri.host == 'viewdate') {

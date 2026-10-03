@@ -102,7 +102,7 @@ class SingleMemoWidget : AppWidgetProvider() {
             
             // 메모 클릭 시 해당 메모로 이동
             val viewIntent = Intent(context, MainActivity::class.java).apply {
-                data = Uri.parse("diary://viewmemo?id=$selectedMemoId")
+                data = Uri.parse("diaryapp://viewmemo?id=$selectedMemoId")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
             val viewPendingIntent = PendingIntent.getActivity(

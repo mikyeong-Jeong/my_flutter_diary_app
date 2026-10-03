@@ -37,7 +37,7 @@ object WidgetUtils {
         params: Map<String, String>? = null
     ): Intent {
         return Intent(context, MainActivity::class.java).apply {
-            val uriBuilder = Uri.parse("diary://$action").buildUpon()
+            val uriBuilder = Uri.parse("diaryapp://$action").buildUpon()
             params?.forEach { (key, value) ->
                 uriBuilder.appendQueryParameter(key, value)
             }

@@ -54,7 +54,7 @@ class MemoWidget : AppWidgetProvider() {
                         
                         // 첫 번째 메모 클릭 시 해당 메모로 이동
                         val viewIntent = Intent(context, MainActivity::class.java).apply {
-                            data = Uri.parse("diary://viewmemo?id=$memoId")
+                            data = Uri.parse("diaryapp://viewmemo?id=$memoId")
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
                         }
                         val viewPendingIntent = PendingIntent.getActivity(
@@ -72,7 +72,7 @@ class MemoWidget : AppWidgetProvider() {
                         views.setViewVisibility(R.id.memo_1_container, View.VISIBLE)
                         
                         val viewIntent = Intent(context, MainActivity::class.java).apply {
-                            data = Uri.parse("diary://viewmemo?id=$memoId")
+                            data = Uri.parse("diaryapp://viewmemo?id=$memoId")
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
                         }
                         val viewPendingIntent = PendingIntent.getActivity(
@@ -90,7 +90,7 @@ class MemoWidget : AppWidgetProvider() {
                         views.setViewVisibility(R.id.memo_2_container, View.VISIBLE)
                         
                         val viewIntent = Intent(context, MainActivity::class.java).apply {
-                            data = Uri.parse("diary://viewmemo?id=$memoId")
+                            data = Uri.parse("diaryapp://viewmemo?id=$memoId")
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
                         }
                         val viewPendingIntent = PendingIntent.getActivity(
@@ -119,7 +119,7 @@ class MemoWidget : AppWidgetProvider() {
             
             // 앱 열기
             val openIntent = Intent(context, MainActivity::class.java).apply {
-                data = Uri.parse("diary://write?type=general")
+                data = Uri.parse("diaryapp://write?type=general")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
             val openPendingIntent = PendingIntent.getActivity(
@@ -135,7 +135,7 @@ class MemoWidget : AppWidgetProvider() {
         
         // 새 메모 추가 버튼 설정
         val addIntent = Intent(context, MainActivity::class.java).apply {
-            data = Uri.parse("diary://write?type=general")
+            data = Uri.parse("diaryapp://write?type=general")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val addPendingIntent = PendingIntent.getActivity(
