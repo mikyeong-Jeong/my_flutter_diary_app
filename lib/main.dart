@@ -22,6 +22,7 @@ import 'core/models/diary_entry.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/widget_service.dart';
 import 'core/services/storage_service.dart';
+import 'core/services/calculator_storage.dart';
 import 'core/navigation/deeplink_router.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 import 'features/write/presentation/screens/write_screen.dart';
@@ -84,7 +85,12 @@ Future<List<RouteSettings>?> _loadInitialRoutes(MethodChannel platform) async {
 
     // 항목을 찾기 위해 저장된 데이터를 미리 로드
     final entries = await StorageService.instance.loadAllEntries();
-    final routes = DeeplinkRouter.resolve(Uri.parse(deeplink), entries);
+    final calculatorSheets = await CalculatorStorage.load();
+    final routes = DeeplinkRouter.resolve(
+      Uri.parse(deeplink),
+      entries,
+      calculatorSheets: calculatorSheets,
+    );
     if (routes.isEmpty) return null;
 
     // 뒤로 가기 시 홈으로 돌아갈 수 있도록 항상 홈을 맨 아래에 둠
@@ -105,7 +111,11 @@ void _handleDeeplink(Uri uri) {
   if (navigator == null || context == null) return;
 
   final entries = context.read<DiaryProvider>().entries;
-  final routes = DeeplinkRouter.resolve(uri, entries);
+  final routes = DeeplinkRouter.resolve(
+    uri,
+    entries,
+    calculatorSheets: context.read<CalculatorProvider>().sheets,
+  );
   if (routes.isEmpty) return;
 
   var toPush = routes;

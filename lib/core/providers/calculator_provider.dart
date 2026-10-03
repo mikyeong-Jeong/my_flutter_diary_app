@@ -2,10 +2,12 @@ import 'package:flutter/foundation.dart';
 
 import '../models/calculator_sheet.dart';
 import '../services/calculator_storage.dart';
+import '../services/widget_service.dart';
 
 /// 계산기 탭의 계산 목록을 관리하는 Provider
 class CalculatorProvider extends ChangeNotifier {
   List<CalculatorSheet> _sheets = [];
+  final WidgetService _widgetService = WidgetService();
   bool _isLoading = true;
 
   CalculatorProvider() {
@@ -23,6 +25,7 @@ class CalculatorProvider extends ChangeNotifier {
     _sortSheets();
     _isLoading = false;
     notifyListeners();
+    await _widgetService.updateCalculatorWidgets(_sheets);
   }
 
   /// 계산 저장 (같은 id가 있으면 수정, 없으면 추가)
@@ -36,6 +39,7 @@ class CalculatorProvider extends ChangeNotifier {
     _sortSheets();
     notifyListeners();
     await CalculatorStorage.save(_sheets);
+    await _widgetService.updateCalculatorWidgets(_sheets);
   }
 
   /// 계산 삭제
@@ -43,6 +47,7 @@ class CalculatorProvider extends ChangeNotifier {
     _sheets.removeWhere((s) => s.id == id);
     notifyListeners();
     await CalculatorStorage.save(_sheets);
+    await _widgetService.updateCalculatorWidgets(_sheets);
   }
 
   /// 저장된 계산인지 확인

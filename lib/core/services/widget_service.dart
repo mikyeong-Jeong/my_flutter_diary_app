@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/calculator_sheet.dart';
 import '../models/diary_entry.dart';
 import 'storage_service.dart';
 
@@ -14,6 +15,7 @@ class WidgetService {
   static const String _widgetName = 'DiaryAppWidget';
   static const String _memoWidgetName = 'MemoWidget';
   static const String _singleMemoWidgetName = 'SingleMemoWidget';
+  static const String _calculatorWidgetName = 'CalculatorWidget';
   
   final StorageService _storageService = StorageService.instance;
 
@@ -115,6 +117,32 @@ class WidgetService {
     } catch (e) {
       // 최근 일기 로드 실패 시 빈 목록 반환
       return [];
+    }
+  }
+
+  /// 계산기 위젯 업데이트
+  ///
+  /// 계산 목록(제목, 지출 총액, 예산, 남은 금액)을 위젯 데이터로 저장하고
+  /// 계산기 위젯을 갱신합니다. 위젯은 각자 선택된 계산 id로 이 목록에서 찾아 표시합니다.
+  Future<void> updateCalculatorWidgets(List<CalculatorSheet> sheets) async {
+    try {
+      final data = sheets
+          .map((s) => {
+                'id': s.id,
+                'title': s.title,
+                'total': s.total,
+                'budget': s.budget,
+                'remaining': s.remaining,
+                'updatedAt': s.updatedAt.toIso8601String(),
+              })
+          .toList();
+      await HomeWidget.saveWidgetData<String>('calculator_sheets', jsonEncode(data));
+      await HomeWidget.updateWidget(
+        name: _calculatorWidgetName,
+        androidName: _calculatorWidgetName,
+      );
+    } catch (e) {
+      // 위젯을 지원하지 않는 플랫폼(웹 등)이거나 업데이트 실패 시 조용히 무시
     }
   }
 

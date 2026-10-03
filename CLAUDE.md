@@ -114,6 +114,7 @@ Located in `android/app/src/main/kotlin/com/diary/app/`:
 - `CalendarWidget.kt`: Calendar widget showing month view
 - `SingleMemoWidget.kt`: Individual memo widget with configuration
 - `SingleMemoWidgetConfigureActivity.kt`: Configuration activity for memo widget
+- `CalculatorWidget.kt` / `CalculatorWidgetConfigureActivity.kt`: Shows one selected calculator sheet (title, spend total, remaining); data comes from `WidgetService.updateCalculatorWidgets` (`calculator_sheets`), tap opens `diaryapp://viewcalc?id=`
 - `WidgetUtils.kt`: Shared utility functions
 - Uses Flutter's `home_widget` package for communication
 
@@ -141,7 +142,7 @@ lib/features/
 - **Warm start**: `MainActivity.onNewIntent` → `onDeeplink` → `main.dart:_handleDeeplink()`
 - **Widget callbacks**: `backgroundCallback()` processes widget interactions
 - **Method channels**: Communication between native Android and Flutter for widget actions
-- **Supported schemes**: `diaryapp://` with hosts: `home`, `write`, `newentry`, `viewmemo`, `viewdate`
+- **Supported schemes**: `diaryapp://` with hosts: `home`, `write`, `newentry`, `viewmemo`, `viewdate`, `viewcalc`
 
 ## Development Guidelines
 
@@ -169,7 +170,7 @@ lib/features/
 - Test widget behavior after app rebuilds
 - Deep link URLs use format: `diaryapp://host?param=value`
 - Widget configuration stored in SharedPreferences
-- Multiple widget types: DiaryApp, Memo, Calendar, SingleMemo
+- Multiple widget types: DiaryApp, Memo, Calendar, SingleMemo, Calculator
 
 ### Localization
 - Primary language is Korean (`ko_KR`)

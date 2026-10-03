@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,8 @@ import 'package:diary_app/core/services/calculator_storage.dart';
 
 void main() {
   late Directory tempDir;
+  // 홈 위젯 플러그인 호출 기록 (계산기 위젯 갱신 확인용)
+  final homeWidgetCalls = <MethodCall>[];
 
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('calculator_test');
@@ -20,9 +23,13 @@ void main() {
       const MethodChannel('plugins.flutter.io/path_provider'),
       (call) async => tempDir.path,
     );
+    homeWidgetCalls.clear();
     messenger.setMockMethodCallHandler(
       const MethodChannel('home_widget'),
-      (call) async => true,
+      (call) async {
+        homeWidgetCalls.add(call);
+        return true;
+      },
     );
   });
 
@@ -270,6 +277,37 @@ void main() {
     expect(secondItem.focusNode!.hasFocus, isTrue);
     // 버튼은 다시 새 마지막 줄 아래로 이동
     expect(tester.getTopLeft(addButton).dy, greaterThan(tester.getBottomLeft(itemField(1)).dy));
+  });
+
+  testWidgets('계산을 저장하면 계산기 홈 위젯 데이터가 갱신된다', (tester) async {
+    await pumpCalculatorTab(tester);
+    await tester.tap(find.byTooltip('계산 추가'));
+    await tester.pumpAndSettle();
+    homeWidgetCalls.clear();
+
+    await tester.enterText(find.widgetWithText(TextField, '제목'), '위젯용 계산');
+    await tester.enterText(budgetField(), '10000');
+    await tester.enterText(amountField(0), '2500');
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pump();
+
+    // 마지막으로 저장된 위젯 데이터 확인
+    final saveCall = homeWidgetCalls.lastWhere(
+      (c) => c.method == 'saveWidgetData' && (c.arguments as Map)['id'] == 'calculator_sheets',
+    );
+    final data = jsonDecode((saveCall.arguments as Map)['data'] as String) as List;
+    expect(data.single['title'], '위젯용 계산');
+    expect(data.single['total'], 2500);
+    expect(data.single['budget'], 10000);
+    expect(data.single['remaining'], 7500);
+
+    // 계산기 위젯 갱신 요청
+    expect(
+      homeWidgetCalls.any((c) =>
+          c.method == 'updateWidget' && (c.arguments as Map)['android'] == 'CalculatorWidget'),
+      isTrue,
+    );
   });
 
   test('CalculatorSheet 합계와 JSON 변환', () {

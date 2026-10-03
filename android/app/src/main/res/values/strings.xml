@@ -5,4 +5,5 @@
     <string name="memo_widget_description">최근 메모 목록을 홈 화면에서 바로 확인할 수 있습니다.</string>
     <string name="single_memo_widget_description">특정 메모를 선택하여 표시합니다.</string>
     <string name="calendar_widget_description">월간 캘린더와 일기 표시</string>
+    <string name="calculator_widget_description">선택한 계산의 지출 총액과 남은 금액을 표시합니다.</string>
 </resources>

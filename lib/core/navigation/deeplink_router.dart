@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../models/calculator_sheet.dart';
 import '../models/diary_entry.dart';
 
 /// 위젯 딥링크(diaryapp://...)를 화면 이동 정보로 변환하는 클래스
@@ -15,8 +16,13 @@ class DeeplinkRouter {
   /// - 첫 번째 항목이 '/'가 아니면 현재 화면 위에 쌓습니다.
   /// - 빈 목록이면 화면 이동 없이 앱만 엽니다 (예: openapp).
   ///
-  /// 지원 host: home, viewmemo, viewdate, newentry, write, openapp
-  static List<RouteSettings> resolve(Uri uri, List<DiaryEntry> entries, {DateTime? now}) {
+  /// 지원 host: home, viewmemo, viewdate, viewcalc, newentry, write, openapp
+  static List<RouteSettings> resolve(
+    Uri uri,
+    List<DiaryEntry> entries, {
+    List<CalculatorSheet> calculatorSheets = const [],
+    DateTime? now,
+  }) {
     final today = _formatDate(now ?? DateTime.now());
 
     switch (uri.host) {
@@ -55,6 +61,15 @@ class DeeplinkRouter {
             arguments: DiaryEntry(date: date, title: '', content: '', type: EntryType.dated),
           ),
         ];
+
+      case 'viewcalc':
+        // 계산기 위젯: 선택된 계산 화면으로 이동 (없으면 계산기 탭)
+        final sheetId = uri.queryParameters['id'];
+        final sheets = calculatorSheets.where((s) => s.id == sheetId);
+        if (sheetId == null || sheets.isEmpty) {
+          return const [RouteSettings(name: '/', arguments: {'tabIndex': 4})];
+        }
+        return [RouteSettings(name: '/calculator', arguments: sheets.first)];
 
       case 'newentry':
         // 일기 위젯의 '새 일기' 버튼 - 오늘 날짜 일기 작성

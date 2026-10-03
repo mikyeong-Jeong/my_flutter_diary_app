@@ -103,6 +103,28 @@
             </intent-filter>
         </activity>
         
+        <!-- 계산기 위젯 (계산 1개 표시) -->
+        <receiver
+            android:name=".CalculatorWidget"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/calculator_widget_info" />
+        </receiver>
+        
+        <!-- 계산기 위젯 설정 액티비티 -->
+        <activity
+            android:name=".CalculatorWidgetConfigureActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.Light.Dialog">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        
         <!-- 캘린더 위젯 -->
         <receiver 
             android:name=".CalendarWidget"

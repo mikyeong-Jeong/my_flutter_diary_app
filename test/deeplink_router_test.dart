@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:diary_app/core/models/calculator_sheet.dart';
 import 'package:diary_app/core/models/diary_entry.dart';
 import 'package:diary_app/core/navigation/deeplink_router.dart';
 
@@ -49,6 +50,25 @@ void main() {
 
     expect(resolve('diaryapp://write?date=2026-10-07').single.entry!.date, '2026-10-07');
     expect(resolve('diaryapp://newentry').single.entry!.date, '2026-10-03');
+  });
+
+  test('viewcalc: 계산기 위젯에서 해당 계산 화면으로 바로 이동, 없으면 계산기 탭', () {
+    final sheet = CalculatorSheet(id: 'c1', title: '생활비');
+    final found = DeeplinkRouter.resolve(
+      Uri.parse('diaryapp://viewcalc?id=c1'),
+      entries,
+      calculatorSheets: [sheet],
+    ).single;
+    expect(found.name, '/calculator');
+    expect(found.arguments, sheet);
+
+    final missing = DeeplinkRouter.resolve(
+      Uri.parse('diaryapp://viewcalc?id=deleted'),
+      entries,
+      calculatorSheets: [sheet],
+    ).single;
+    expect(missing.name, '/');
+    expect(missing.arguments, {'tabIndex': 4});
   });
 
   test('home: 지정한 탭으로 홈 화면 열기, openapp은 이동 없음', () {
