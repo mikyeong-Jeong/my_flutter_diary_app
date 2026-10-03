@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/calculator_sheet.dart';
 import '../models/diary_entry.dart';
+import '../utils/checklist_utils.dart';
 import 'storage_service.dart';
 
 /// 홈 화면 위젯과 메모 위젯을 관리하는 서비스
@@ -174,7 +175,7 @@ class WidgetService {
         );
         await HomeWidget.saveWidgetData<String>(
           'memo_${i}_content', 
-          memo.content,
+          ChecklistUtils.forPlainDisplay(memo.content),
         );
       }
       
@@ -239,7 +240,8 @@ class WidgetService {
         await HomeWidget.saveWidgetData<String>('single_memo_widget_${widgetId}_date', date);
         await HomeWidget.saveWidgetData<String>('single_memo_widget_${widgetId}_title', 
             entry.title.isEmpty ? '제목 없음' : entry.title);
-        await HomeWidget.saveWidgetData<String>('single_memo_widget_${widgetId}_content', entry.content);
+        await HomeWidget.saveWidgetData<String>(
+            'single_memo_widget_${widgetId}_content', ChecklistUtils.forPlainDisplay(entry.content));
         await HomeWidget.saveWidgetData<String>('single_memo_widget_${widgetId}_icons', allEmojis.join(' '));
         await HomeWidget.saveWidgetData<String>('single_memo_widget_${widgetId}_type', 
             entry.type.name);
@@ -290,7 +292,7 @@ class WidgetService {
       final entriesJson = allEntries.map((entry) => {
         'id': entry.id,
         'title': entry.title,
-        'content': entry.content,
+        'content': ChecklistUtils.forPlainDisplay(entry.content), // 위젯 표시용 (☑ 이모지 방지)
         'date': entry.date ?? '',
         'type': entry.type.name, // dated / general / datedNote
         'updatedAt': entry.updatedAt.toIso8601String(),

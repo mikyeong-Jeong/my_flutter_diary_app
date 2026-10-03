@@ -103,8 +103,10 @@ adb shell am start -W -a android.intent.action.VIEW -n com.diary.app/.MainActivi
 - Checklists: content stores dedicated symbols `☐` (U+2610, unchecked) / `☑` (U+2611, checked); text after `☑` up to the user's line break (`\n`) is struck through. Plain `□`/`■` typed by users are ordinary text
   - Legacy data: line-start `□ `/`■ ` (old toolbar format) is converted to `☐`/`☑` in `DiaryEntry.fromJson` (`ChecklistUtils.migrateLegacy`)
   - Rules: `lib/core/utils/checklist_utils.dart`
-  - Read screens: `lib/core/widgets/checklist_text.dart` (tap to toggle + save)
-  - Edit screens: `ChecklistTextEditingController` (strikethrough while editing)
+  - Display: `☐`/`☑` are drawn as Material icons (`check_box_outline_blank` / `check_box`), never as glyphs, because `☑` renders as a color emoji on some devices. One checkbox char = one `WidgetSpan`, so text offsets stay aligned
+  - Read screens / list previews: `lib/core/widgets/checklist_text.dart` (`ChecklistText`, tap icon to toggle + save; `selectable: false` for list cards)
+  - Edit screens: `ChecklistTextEditingController` (icons + strikethrough while editing)
+  - Android home widgets (plain text): `ChecklistUtils.forPlainDisplay` appends U+FE0E after `☑` to avoid emoji rendering
 - `AppSettings`: App configuration and preferences
 - Uses `json_annotation` and `build_runner` for code generation
 

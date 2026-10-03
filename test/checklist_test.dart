@@ -95,7 +95,8 @@ void main() {
         ),
       ));
 
-      await tester.tapOnText(find.textRange.ofSubstring('☐'));
+      // 체크박스는 아이콘으로 그려지며, 아이콘을 탭하면 토글
+      await tester.tap(find.byIcon(Icons.check_box_outline_blank));
       expect(changed, '☑ 우유\n☑ 계란');
     });
 
@@ -109,7 +110,7 @@ void main() {
 
       await tester.tapOnText(find.textRange.ofSubstring('\u25A0'));
       expect(changed, isNull);
-      final span = contentSpan(tester, '☐');
+      final span = contentSpan(tester, '할 일');
       expect(styleOfSpan(span, '\u25A0 강조 문장\n')?.decoration, isNot(TextDecoration.lineThrough));
     });
 
@@ -118,13 +119,16 @@ void main() {
         home: Scaffold(body: ChecklistText('☐ 우유\n☑ 계란')),
       ));
 
-      final span = contentSpan(tester, '☐');
+      final span = contentSpan(tester, '우유');
       expect(styleOfSpan(span, ' 계란')?.decoration, TextDecoration.lineThrough);
       expect(styleOfSpan(span, ' 우유\n')?.decoration, isNot(TextDecoration.lineThrough));
-      // 체크박스는 본문과 같은 글자색 (테마 강조색으로 바뀌지 않음)
+      // ☐/☑ 문자는 글자(이모지)로 그리지 않고 같은 디자인의 아이콘으로 표시
+      expect(span.toPlainText().contains('☑'), isFalse);
+      expect(span.toPlainText().contains('☐'), isFalse);
+      // 아이콘 색은 본문과 같은 글자색 (테마 강조색으로 바뀌지 않음)
       final baseColor = styleOfSpan(span, ' 우유\n')?.color;
-      expect(styleOfSpan(span, '☐')?.color, baseColor);
-      expect(styleOfSpan(span, '☑')?.color, baseColor);
+      expect(tester.widget<Icon>(find.byIcon(Icons.check_box_outline_blank)).color, baseColor);
+      expect(tester.widget<Icon>(find.byIcon(Icons.check_box)).color, baseColor);
     });
   });
 
@@ -144,6 +148,24 @@ void main() {
       span = controller.buildTextSpan(context: context, withComposing: true);
       expect(styleOfSpan(span, '할')?.decoration, TextDecoration.underline);
       expect(styleOfSpan(span, ' 완료')?.decoration, TextDecoration.lineThrough);
+      // 체크박스 문자 1개 = 아이콘 1개 (텍스트 길이/커서 위치 유지)
+      expect(span.toPlainText().length, controller.text.length);
+    });
+
+    testWidgets('입력칸에서도 체크박스가 아이콘으로 그려진다', (tester) async {
+      final controller = ChecklistTextEditingController(text: '☑ 완료\n☐ 할 일');
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(body: TextField(controller: controller, maxLines: null)),
+      ));
+      await tester.pump();
+
+      expect(find.byIcon(Icons.check_box), findsOneWidget);
+      expect(find.byIcon(Icons.check_box_outline_blank), findsOneWidget);
+
+      // 입력해도 오류 없이 동작
+      await tester.enterText(find.byType(TextField), '☑ 완료\n☐ 할 일\n추가');
+      await tester.pump();
+      expect(tester.takeException(), isNull);
     });
   });
 
@@ -198,7 +220,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 첫 번째 체크박스 탭
-      await tester.tapOnText(find.textRange.ofSubstring('☐').first);
+      await tester.tap(find.byIcon(Icons.check_box_outline_blank).first);
       // 저장(파일 쓰기)이 끝날 때까지 실제 시간을 흘려보내며 대기
       for (int i = 0; i < 10 && provider.datedNotes.single.content.startsWith('☐'); i++) {
         await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
@@ -209,7 +231,7 @@ void main() {
       expect(provider.datedNotes.single.content, '☑ 우유\n☐ 계란');
       // 체크해도 수정 시간은 바뀌지 않음
       expect(provider.datedNotes.single.updatedAt, DateTime(2026, 10, 1, 9, 0));
-      final span = contentSpan(tester, '☐');
+      final span = contentSpan(tester, '우유');
       expect(styleOfSpan(span, ' 우유')?.decoration, TextDecoration.lineThrough);
 
       // 다시 불러와도 체크 상태가 유지됨

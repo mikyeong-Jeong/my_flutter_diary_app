@@ -28,6 +28,12 @@ class ChecklistUtils {
     );
   }
 
+  /// 아이콘을 쓸 수 없는 곳(안드로이드 홈 위젯 텍스트)에 넘길 표시용 텍스트
+  ///
+  /// ☑ 뒤에 텍스트 표시 선택자(U+FE0E)를 붙여 컬러 이모지 대신 글자 모양으로 표시되도록 합니다.
+  /// 저장용 데이터에는 사용하지 마세요.
+  static String forPlainDisplay(String text) => text.replaceAll(checked, '$checked\uFE0E');
+
   /// 해당 문자가 체크박스인지 확인
   static bool isCheckbox(String char) => char == unchecked || char == checked;
 

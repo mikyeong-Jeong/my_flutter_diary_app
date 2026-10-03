@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/providers/diary_provider.dart';
 import '../../../../core/models/diary_entry.dart';
+import '../../../../core/widgets/checklist_text.dart';
 
 /// 검색 화면 위젯
 /// 
@@ -651,9 +652,10 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                     ),
                     const SizedBox(height: 8),
                   ],
-                  // 내용
-                  Text(
+                  // 내용 (체크박스는 아이콘으로 표시)
+                  ChecklistText(
                     entry.content,
+                    selectable: false,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(

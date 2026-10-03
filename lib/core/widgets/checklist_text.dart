@@ -1,104 +1,122 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../utils/checklist_utils.dart';
 
-/// 체크박스를 탭으로 토글할 수 있는 읽기 전용 텍스트
+/// 체크박스(☐/☑)를 아이콘으로 표시하는 텍스트
 ///
-/// - ☐/☑ 문자를 탭하면 체크 상태가 바뀌고 [onChanged]로 바뀐 전체 텍스트를 전달합니다.
+/// - 저장된 ☐/☑ 문자는 같은 디자인의 체크박스 아이콘으로 그립니다.
+///   (☑ 문자는 기기에 따라 컬러 이모지로 표시되어 ☐와 모양이 달라지므로 아이콘 사용)
+/// - [onChanged]가 있으면 아이콘을 탭해 체크/해제하고, 바뀐 전체 텍스트를 전달합니다.
 /// - 체크된 항목(☑ 뒤 텍스트)은 취소선과 흐린 색으로 표시합니다.
-/// - 기존처럼 길게 눌러 텍스트를 선택/복사할 수 있습니다.
-/// - [onChanged]가 null이면 체크박스를 탭해도 변경되지 않습니다.
-class ChecklistText extends StatefulWidget {
+/// - [selectable]이 true이면 길게 눌러 텍스트를 선택/복사할 수 있습니다.
+class ChecklistText extends StatelessWidget {
   const ChecklistText(
     this.text, {
     super.key,
     this.style,
     this.onChanged,
+    this.selectable = true,
+    this.maxLines,
+    this.overflow,
   });
 
   final String text;
   final TextStyle? style;
   final ValueChanged<String>? onChanged;
 
-  @override
-  State<ChecklistText> createState() => _ChecklistTextState();
-}
-
-class _ChecklistTextState extends State<ChecklistText> {
-  /// 체크박스 문자별 탭 인식기 (빌드마다 다시 만들므로 이전 것은 해제)
-  final List<TapGestureRecognizer> _recognizers = [];
-
-  @override
-  void dispose() {
-    _disposeRecognizers();
-    super.dispose();
-  }
-
-  void _disposeRecognizers() {
-    for (final recognizer in _recognizers) {
-      recognizer.dispose();
-    }
-    _recognizers.clear();
-  }
+  /// 길게 눌러 선택/복사 가능 여부 (목록 미리보기에서는 false)
+  final bool selectable;
+  final int? maxLines;
+  final TextOverflow? overflow;
 
   @override
   Widget build(BuildContext context) {
-    _disposeRecognizers();
-
-    final baseStyle = DefaultTextStyle.of(context).style.merge(widget.style);
-    final text = widget.text;
-    final checkedRanges = ChecklistUtils.checkedRanges(text);
-    final checkedStyle = baseStyle.copyWith(
-      decoration: TextDecoration.lineThrough,
-      color: (baseStyle.color ?? Colors.black).withOpacity(0.5),
+    final baseStyle = DefaultTextStyle.of(context).style.merge(style);
+    final spans = buildChecklistSpans(
+      text: text,
+      baseStyle: baseStyle,
+      onToggle: onChanged == null ? null : (index) => onChanged!(ChecklistUtils.toggleAt(text, index)),
     );
-    // 체크박스 색상은 본문 글자색 그대로 (편집 화면과 동일), 탭하기 쉽도록 조금 크게 표시
-    final checkboxStyle = baseStyle.copyWith(
-      fontSize: (baseStyle.fontSize ?? 14) * 1.25,
+    final richText = Text.rich(
+      TextSpan(style: baseStyle, children: spans),
+      maxLines: maxLines,
+      overflow: overflow,
     );
-
-    bool isChecked(int index) =>
-        checkedRanges.any((range) => index >= range[0] && index < range[1]);
-
-    final spans = <TextSpan>[];
-    final buffer = StringBuffer();
-    bool? bufferChecked;
-
-    void flush() {
-      if (buffer.isEmpty) return;
-      spans.add(TextSpan(
-        text: buffer.toString(),
-        style: bufferChecked == true ? checkedStyle : baseStyle,
-      ));
-      buffer.clear();
-    }
-
-    for (int i = 0; i < text.length; i++) {
-      final char = text[i];
-      if (ChecklistUtils.isCheckbox(char)) {
-        flush();
-        TapGestureRecognizer? recognizer;
-        if (widget.onChanged != null) {
-          recognizer = TapGestureRecognizer()
-            ..onTap = () => widget.onChanged!(ChecklistUtils.toggleAt(text, i));
-          _recognizers.add(recognizer);
-        }
-        spans.add(TextSpan(text: char, style: checkboxStyle, recognizer: recognizer));
-        continue;
-      }
-      final checked = isChecked(i);
-      if (bufferChecked != checked) {
-        flush();
-        bufferChecked = checked;
-      }
-      buffer.write(char);
-    }
-    flush();
-
-    // SelectionArea: 길게 눌러 선택/복사 유지, Text.rich: 체크박스 탭 인식기 동작
-    return SelectionArea(
-      child: Text.rich(TextSpan(style: baseStyle, children: spans)),
-    );
+    // SelectionArea: 길게 눌러 선택/복사 유지
+    return selectable ? SelectionArea(child: richText) : richText;
   }
+}
+
+/// 체크박스 아이콘 (☐: 빈 네모, ☑: 체크된 네모)
+///
+/// 읽기 화면과 편집 화면에서 같은 모양을 쓰기 위해 공통으로 사용합니다.
+Widget checklistIcon({required bool checked, required TextStyle style}) {
+  final size = (style.fontSize ?? 14) * 1.3;
+  return Padding(
+    padding: const EdgeInsets.only(right: 2),
+    child: Icon(
+      checked ? Icons.check_box : Icons.check_box_outline_blank,
+      size: size,
+      color: style.color,
+    ),
+  );
+}
+
+/// 텍스트를 체크박스 아이콘 + 취소선이 적용된 span 목록으로 변환
+///
+/// 체크박스 문자 1개는 아이콘(WidgetSpan) 1개로 바뀌므로 텍스트 위치(offset)가 그대로 유지됩니다.
+/// [onToggle]이 있으면 아이콘을 탭할 때 해당 체크박스의 위치를 전달합니다.
+List<InlineSpan> buildChecklistSpans({
+  required String text,
+  required TextStyle baseStyle,
+  ValueChanged<int>? onToggle,
+}) {
+  final checkedRanges = ChecklistUtils.checkedRanges(text);
+  final checkedStyle = baseStyle.copyWith(
+    decoration: TextDecoration.lineThrough,
+    color: (baseStyle.color ?? Colors.black).withOpacity(0.5),
+  );
+
+  bool isChecked(int index) =>
+      checkedRanges.any((range) => index >= range[0] && index < range[1]);
+
+  final spans = <InlineSpan>[];
+  final buffer = StringBuffer();
+  bool? bufferChecked;
+
+  void flush() {
+    if (buffer.isEmpty) return;
+    spans.add(TextSpan(
+      text: buffer.toString(),
+      style: bufferChecked == true ? checkedStyle : baseStyle,
+    ));
+    buffer.clear();
+  }
+
+  for (int i = 0; i < text.length; i++) {
+    final char = text[i];
+    if (ChecklistUtils.isCheckbox(char)) {
+      flush();
+      final icon = checklistIcon(checked: char == ChecklistUtils.checked, style: baseStyle);
+      spans.add(WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: onToggle == null
+            ? icon
+            : GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => onToggle(i),
+                child: icon,
+              ),
+      ));
+      continue;
+    }
+    final checked = isChecked(i);
+    if (bufferChecked != checked) {
+      flush();
+      bufferChecked = checked;
+    }
+    buffer.write(char);
+  }
+  flush();
+  return spans;
 }
