@@ -117,13 +117,14 @@ void main() {
       await tempDir.delete(recursive: true);
     });
 
-    testWidgets('읽기 화면에서 체크박스를 탭하면 체크되고 저장된다', (tester) async {
+    testWidgets('읽기 화면에서 체크박스를 탭하면 체크되고 저장되며, 수정 시간은 유지된다', (tester) async {
       final provider = DiaryProvider();
       final note = DiaryEntry(
         date: '2026-10-03',
         title: '장보기',
         content: '□ 우유\n□ 계란',
         type: EntryType.datedNote,
+        updatedAt: DateTime(2026, 10, 1, 9, 0),
       );
       await tester.runAsync(() async {
         await provider.loadEntries();
@@ -155,6 +156,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(provider.datedNotes.single.content, '■ 우유\n□ 계란');
+      // 체크해도 수정 시간은 바뀌지 않음
+      expect(provider.datedNotes.single.updatedAt, DateTime(2026, 10, 1, 9, 0));
       final span = contentSpan(tester, '□');
       expect(styleOfSpan(span, ' 우유')?.decoration, TextDecoration.lineThrough);
 
@@ -162,6 +165,7 @@ void main() {
       final reloaded = DiaryProvider();
       await tester.runAsync(() => reloaded.loadEntries());
       expect(reloaded.datedNotes.single.content, '■ 우유\n□ 계란');
+      expect(reloaded.datedNotes.single.updatedAt, DateTime(2026, 10, 1, 9, 0));
     });
   });
 }

@@ -111,8 +111,10 @@ class DatedNoteReadScreen extends StatelessWidget {
                   height: 1.6,
                 ),
                 onChanged: (newContent) {
+                  // 체크 표시만 바뀐 것이므로 수정 시간은 그대로 유지
+                  // (copyWith는 updatedAt 미지정 시 현재 시간으로 바꿈)
                   context.read<DiaryProvider>().updateEntry(
-                        entry.copyWith(content: newContent),
+                        entry.copyWith(content: newContent, updatedAt: entry.updatedAt),
                       );
                 },
               ),
