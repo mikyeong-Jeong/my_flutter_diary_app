@@ -249,133 +249,179 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
               ],
             ),
           ),
-          body: Column(
-            children: [
-              // 검색 바
-              Container(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: '제목, 내용, 태그로 검색',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (_searchController.text.isNotEmpty)
+          body: SafeArea(
+            // 하단 시스템 내비게이션 바(edge-to-edge)에 내용이 가려지지 않도록
+            top: false,
+            child: Column(
+              children: [
+                // 검색 바
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: '제목, 내용, 태그로 검색',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_searchController.text.isNotEmpty)
+                                IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    _performSearch('');
+                                  },
+                                ),
                               IconButton(
-                                icon: const Icon(Icons.clear),
+                                icon: Icon(
+                                  Icons.date_range,
+                                  color: (_startDate != null || _endDate != null) 
+                                      ? Theme.of(context).primaryColor 
+                                      : null,
+                                ),
+                                onPressed: _selectDateRange,
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  _showTagFilter ? Icons.filter_list : Icons.filter_list_outlined,
+                                  color: _selectedTags.isNotEmpty ? Theme.of(context).primaryColor : null,
+                                ),
                                 onPressed: () {
-                                  _searchController.clear();
-                                  _performSearch('');
+                                  setState(() {
+                                    _showTagFilter = !_showTagFilter;
+                                  });
                                 },
                               ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.date_range,
-                                color: (_startDate != null || _endDate != null) 
-                                    ? Theme.of(context).primaryColor 
-                                    : null,
-                              ),
-                              onPressed: _selectDateRange,
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                _showTagFilter ? Icons.filter_list : Icons.filter_list_outlined,
-                                color: _selectedTags.isNotEmpty ? Theme.of(context).primaryColor : null,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _showTagFilter = !_showTagFilter;
-                                });
-                              },
-                            ),
-                          ],
+                            ],
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                          ),
+                          filled: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20.0,
+                            vertical: 16.0,
+                          ),
                         ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30.0),
-                        ),
-                        filled: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20.0,
-                          vertical: 16.0,
-                        ),
+                        onChanged: _performSearch,
                       ),
-                      onChanged: _performSearch,
-                    ),
                     
-                    // 활성화된 필터 표시
-                    if (_startDate != null || _endDate != null || _selectedTags.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  '활성 필터',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey,
+                      // 활성화된 필터 표시
+                      if (_startDate != null || _endDate != null || _selectedTags.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    '활성 필터',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey,
+                                    ),
                                   ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _startDate = null;
-                                      _endDate = null;
-                                      _selectedTags.clear();
-                                    });
-                                  },
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    minimumSize: Size.zero,
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _startDate = null;
+                                        _endDate = null;
+                                        _selectedTags.clear();
+                                      });
+                                    },
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      minimumSize: Size.zero,
+                                    ),
+                                    child: const Text(
+                                      '모두 초기화',
+                                      style: TextStyle(fontSize: 11),
+                                    ),
                                   ),
-                                  child: const Text(
-                                    '모두 초기화',
-                                    style: TextStyle(fontSize: 11),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 4,
-                              children: [
-                                // 날짜 필터 표시
-                                if (_startDate != null || _endDate != null)
-                                  Container(
+                                ],
+                              ),
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 4,
+                                children: [
+                                  // 날짜 필터 표시
+                                  if (_startDate != null || _endDate != null)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue[100],
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: Colors.blue[300]!),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.date_range,
+                                            size: 12,
+                                            color: Colors.blue[700],
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            _getDateFilterDisplayText(),
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.blue[700],
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          GestureDetector(
+                                            onTap: () {
+                                              setState(() {
+                                                _startDate = null;
+                                                _endDate = null;
+                                              });
+                                            },
+                                            child: Icon(
+                                              Icons.close,
+                                              size: 12,
+                                              color: Colors.blue[700],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                
+                                  // 선택된 태그들 표시
+                                  ..._selectedTags.map((tag) => Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: Colors.blue[100],
+                                      color: Theme.of(context).primaryColor.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.blue[300]!),
+                                      border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Icon(
-                                          Icons.date_range,
+                                          Icons.tag,
                                           size: 12,
-                                          color: Colors.blue[700],
+                                          color: Theme.of(context).primaryColor,
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          _getDateFilterDisplayText(),
+                                          tag,
                                           style: TextStyle(
                                             fontSize: 11,
-                                            color: Colors.blue[700],
+                                            color: Theme.of(context).primaryColor,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -383,145 +429,103 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                                         GestureDetector(
                                           onTap: () {
                                             setState(() {
-                                              _startDate = null;
-                                              _endDate = null;
+                                              _selectedTags.remove(tag);
                                             });
                                           },
                                           child: Icon(
                                             Icons.close,
                                             size: 12,
-                                            color: Colors.blue[700],
+                                            color: Theme.of(context).primaryColor,
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                
-                                // 선택된 태그들 표시
-                                ..._selectedTags.map((tag) => Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).primaryColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.tag,
-                                        size: 12,
-                                        color: Theme.of(context).primaryColor,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        tag,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Theme.of(context).primaryColor,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            _selectedTags.remove(tag);
-                                          });
-                                        },
-                                        child: Icon(
-                                          Icons.close,
-                                          size: 12,
-                                          color: Theme.of(context).primaryColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )).toList(),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    
-                    // 태그 필터 UI
-                    if (_showTagFilter) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  '태그로 필터링',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                if (_selectedTags.isNotEmpty)
-                                  TextButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _selectedTags.clear();
-                                      });
-                                    },
-                                    child: const Text('초기화'),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            if (_availableTags.isEmpty)
-                              const Text(
-                                '사용 가능한 태그가 없습니다',
-                                style: TextStyle(color: Colors.grey),
-                              )
-                            else
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
-                                children: _availableTags.map((tag) {
-                                  final isSelected = _selectedTags.contains(tag);
-                                  return FilterChip(
-                                    label: Text(tag),
-                                    selected: isSelected,
-                                    onSelected: (selected) {
-                                      setState(() {
-                                        if (selected) {
-                                          _selectedTags.add(tag);
-                                        } else {
-                                          _selectedTags.remove(tag);
-                                        }
-                                      });
-                                    },
-                                    selectedColor: Theme.of(context).primaryColor.withOpacity(0.3),
-                                  );
-                                }).toList(),
+                                  )).toList(),
+                                ],
                               ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
+                    
+                      // 태그 필터 UI
+                      if (_showTagFilter) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    '태그로 필터링',
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  if (_selectedTags.isNotEmpty)
+                                    TextButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _selectedTags.clear();
+                                        });
+                                      },
+                                      child: const Text('초기화'),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              if (_availableTags.isEmpty)
+                                const Text(
+                                  '사용 가능한 태그가 없습니다',
+                                  style: TextStyle(color: Colors.grey),
+                                )
+                              else
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 4,
+                                  children: _availableTags.map((tag) {
+                                    final isSelected = _selectedTags.contains(tag);
+                                    return FilterChip(
+                                      label: Text(tag),
+                                      selected: isSelected,
+                                      onSelected: (selected) {
+                                        setState(() {
+                                          if (selected) {
+                                            _selectedTags.add(tag);
+                                          } else {
+                                            _selectedTags.remove(tag);
+                                          }
+                                        });
+                                      },
+                                      selectedColor: Theme.of(context).primaryColor.withOpacity(0.3),
+                                    );
+                                  }).toList(),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
               
-              // 검색 결과
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildSearchResults(datedResults, true),
-                    _buildSearchResults(generalResults, false),
-                  ],
+                // 검색 결과
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildSearchResults(datedResults, true),
+                      _buildSearchResults(generalResults, false),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

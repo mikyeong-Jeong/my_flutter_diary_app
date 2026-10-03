@@ -83,4 +83,41 @@ void main() {
     expect(find.text('수정 2026.12.31 23:59'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('목록 맨 아래 카드가 하단 내비게이션 바에 가려지지 않는다', (tester) async {
+    // 360x800 화면 + 하단 시스템 내비게이션 바 48dp (Android 15 edge-to-edge)
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.padding = const FakeViewPadding(bottom: 48);
+    tester.view.viewPadding = const FakeViewPadding(bottom: 48);
+    addTearDown(tester.view.reset);
+
+    final provider = DiaryProvider();
+    await tester.runAsync(() async {
+      await provider.loadEntries();
+      for (int i = 1; i <= 8; i++) {
+        await provider.addEntry(DiaryEntry(
+          date: '2026-10-0$i',
+          title: '일기 $i',
+          content: '내용 $i',
+        ));
+      }
+    });
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<DiaryProvider>.value(
+        value: provider,
+        child: const MaterialApp(home: SearchScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 목록 맨 아래까지 스크롤
+    await tester.drag(find.byType(ListView).first, const Offset(0, -5000));
+    await tester.pumpAndSettle();
+
+    // 가장 오래된(맨 아래) 카드의 아래쪽이 내비게이션 바(화면 아래 48dp) 위에 있어야 함
+    final lastCard = find.ancestor(of: find.text('일기 1'), matching: find.byType(Card));
+    expect(tester.getBottomLeft(lastCard).dy, lessThanOrEqualTo(800 - 48));
+  });
 }

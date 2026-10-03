@@ -216,116 +216,120 @@ class _DatedNoteScreenState extends State<DatedNoteScreen> with WidgetsBindingOb
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 날짜 선택 영역
-            Container(
-              key: ValueKey(_selectedDate),
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Row(
-                children: [
-                  Icon(Icons.calendar_today, size: 20),
-                  const SizedBox(width: 8),
-                  InkWell(
-                    onTap: _selectDate,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Theme.of(context).primaryColor),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            DateFormat('yyyy년 M월 d일 EEEE', 'ko_KR').format(_selectedDate),
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(Icons.edit, size: 16, color: Theme.of(context).primaryColor),
-                        ],
+      body: SafeArea(
+        // 하단 시스템 내비게이션 바(edge-to-edge)에 내용이 가려지지 않도록
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 날짜 선택 영역
+              Container(
+                key: ValueKey(_selectedDate),
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 20),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: _selectDate,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Theme.of(context).primaryColor),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              DateFormat('yyyy년 M월 d일 EEEE', 'ko_KR').format(_selectedDate),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(Icons.edit, size: 16, color: Theme.of(context).primaryColor),
+                          ],
+                        ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // 제목 입력
+              TextField(
+                controller: _titleController,
+                focusNode: _titleFocusNode,
+                decoration: InputDecoration(
+                  hintText: '제목 (선택사항)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 제목 입력
-            TextField(
-              controller: _titleController,
-              focusNode: _titleFocusNode,
-              decoration: InputDecoration(
-                hintText: '제목 (선택사항)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  prefixIcon: const Icon(Icons.title),
                 ),
-                prefixIcon: const Icon(Icons.title),
+                style: Theme.of(context).textTheme.titleLarge,
+                textCapitalization: TextCapitalization.sentences,
               ),
-              style: Theme.of(context).textTheme.titleLarge,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // 내용 입력
-            AdvancedRichTextField(
-              key: _richTextFieldKey,
-              controller: _contentController,
-              focusNode: _contentFocusNode,
-              textStyleState: textStyleState,
-              decoration: InputDecoration(
-                hintText: '내용을 입력하세요...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+              // 내용 입력
+              AdvancedRichTextField(
+                key: _richTextFieldKey,
+                controller: _contentController,
+                focusNode: _contentFocusNode,
+                textStyleState: textStyleState,
+                decoration: InputDecoration(
+                  hintText: '내용을 입력하세요...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignLabelWithHint: true,
                 ),
-                alignLabelWithHint: true,
+                maxLines: null,
+                minLines: 15,
+                keyboardType: TextInputType.multiline,
+                textCapitalization: TextCapitalization.sentences,
               ),
-              maxLines: null,
-              minLines: 15,
-              keyboardType: TextInputType.multiline,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // 생성/수정 정보 표시
-            if (_isEditing)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.create, size: 16),
-                          const SizedBox(width: 8),
-                          Text(
-                            '생성: ${_entry.formattedCreatedAt}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.update, size: 16),
-                          const SizedBox(width: 8),
-                          Text(
-                            '수정: ${_entry.formattedUpdatedAt}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ],
+              // 생성/수정 정보 표시
+              if (_isEditing)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.create, size: 16),
+                            const SizedBox(width: 8),
+                            Text(
+                              '생성: ${_entry.formattedCreatedAt}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.update, size: 16),
+                            const SizedBox(width: 8),
+                            Text(
+                              '수정: ${_entry.formattedUpdatedAt}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

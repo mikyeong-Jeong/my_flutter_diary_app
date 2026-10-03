@@ -39,171 +39,176 @@ class ReadScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 날짜 표시 (날짜별 일기인 경우)
-            if (entry.type == EntryType.dated && entry.date != null)
+      body: SafeArea(
+        // 하단 시스템 내비게이션 바(edge-to-edge)에 내용이 가려지지 않도록
+        top: false,
+        child: SingleChildScrollView(
+          // 오른쪽 아래 수정 버튼(FAB)에 마지막 줄이 가려지지 않도록 하단 여백 추가
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 날짜 표시 (날짜별 일기인 경우)
+              if (entry.type == EntryType.dated && entry.date != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12.0,
+                    vertical: 6.0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16.0),
+                  ),
+                  child: Text(
+                    DateFormat('yyyy년 M월 d일 EEEE', 'ko_KR')
+                        .format(DateTime.parse(entry.date!)),
+                    style: TextStyle(
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+            
+              const SizedBox(height: 16),
+            
+              // 제목
+              if (entry.title.isNotEmpty) ...[
+                Text(
+                  entry.title,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            
+              // 감정 이모지 (날짜별 일기인 경우)
+              if (entry.type == EntryType.dated && 
+                  (entry.moods.isNotEmpty || entry.customEmojis.isNotEmpty)) ...[
+                Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: [
+                    ...entry.moods.map((mood) => Container(
+                      padding: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        mood,
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                    )),
+                    ...entry.customEmojis.map((emoji) => Container(
+                      padding: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        emoji,
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                    )),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+            
+              // 태그 (날짜별 일기인 경우)
+              if (entry.type == EntryType.dated && entry.tags.isNotEmpty) ...[
+                Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: entry.tags.map((tag) => Chip(
+                    label: Text(tag),
+                    backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                    labelStyle: TextStyle(
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  )).toList(),
+                ),
+                const SizedBox(height: 16),
+              ],
+            
+              // 본문 내용 (시스템 기본 선택/복사 기능)
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12.0,
-                  vertical: 6.0,
-                ),
+                width: double.infinity,
+                padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16.0),
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(12.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  DateFormat('yyyy년 M월 d일 EEEE', 'ko_KR')
-                      .format(DateTime.parse(entry.date!)),
-                  style: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.w500,
+                // 체크박스(☐/☑)를 탭하면 체크/해제되고 바로 저장 (체크된 항목은 취소선)
+                child: ChecklistText(
+                  entry.content,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    height: 1.6,
                   ),
+                  onChanged: (newContent) {
+                    // 체크 표시만 바뀐 것이므로 수정 시간은 그대로 유지
+                    // (copyWith는 updatedAt 미지정 시 현재 시간으로 바꿈)
+                    context.read<DiaryProvider>().updateEntry(
+                          entry.copyWith(content: newContent, updatedAt: entry.updatedAt),
+                        );
+                  },
                 ),
               ),
             
-            const SizedBox(height: 16),
+              const SizedBox(height: 24),
             
-            // 제목
-            if (entry.title.isNotEmpty) ...[
-              Text(
-                entry.title,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+              // 메타 정보
+              Container(
+                padding: const EdgeInsets.all(12.0),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).dividerColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.create,
+                          size: 16,
+                          color: Theme.of(context).textTheme.bodySmall?.color,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '작성: ${DateFormat('yyyy-MM-dd HH:mm').format(entry.createdAt)}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.update,
+                          size: 16,
+                          color: Theme.of(context).textTheme.bodySmall?.color,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '수정: ${DateFormat('yyyy-MM-dd HH:mm').format(entry.updatedAt)}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
             ],
-            
-            // 감정 이모지 (날짜별 일기인 경우)
-            if (entry.type == EntryType.dated && 
-                (entry.moods.isNotEmpty || entry.customEmojis.isNotEmpty)) ...[
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 8.0,
-                children: [
-                  ...entry.moods.map((mood) => Container(
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      mood,
-                      style: const TextStyle(fontSize: 24),
-                    ),
-                  )),
-                  ...entry.customEmojis.map((emoji) => Container(
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      emoji,
-                      style: const TextStyle(fontSize: 24),
-                    ),
-                  )),
-                ],
-              ),
-              const SizedBox(height: 16),
-            ],
-            
-            // 태그 (날짜별 일기인 경우)
-            if (entry.type == EntryType.dated && entry.tags.isNotEmpty) ...[
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 8.0,
-                children: entry.tags.map((tag) => Chip(
-                  label: Text(tag),
-                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                  labelStyle: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                  ),
-                )).toList(),
-              ),
-              const SizedBox(height: 16),
-            ],
-            
-            // 본문 내용 (시스템 기본 선택/복사 기능)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(12.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              // 체크박스(☐/☑)를 탭하면 체크/해제되고 바로 저장 (체크된 항목은 취소선)
-              child: ChecklistText(
-                entry.content,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  height: 1.6,
-                ),
-                onChanged: (newContent) {
-                  // 체크 표시만 바뀐 것이므로 수정 시간은 그대로 유지
-                  // (copyWith는 updatedAt 미지정 시 현재 시간으로 바꿈)
-                  context.read<DiaryProvider>().updateEntry(
-                        entry.copyWith(content: newContent, updatedAt: entry.updatedAt),
-                      );
-                },
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // 메타 정보
-            Container(
-              padding: const EdgeInsets.all(12.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).dividerColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.create,
-                        size: 16,
-                        color: Theme.of(context).textTheme.bodySmall?.color,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '작성: ${DateFormat('yyyy-MM-dd HH:mm').format(entry.createdAt)}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.update,
-                        size: 16,
-                        color: Theme.of(context).textTheme.bodySmall?.color,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '수정: ${DateFormat('yyyy-MM-dd HH:mm').format(entry.updatedAt)}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
