@@ -176,26 +176,31 @@ class AdvancedRichTextFieldState extends State<AdvancedRichTextField> {
       animation: Listenable.merge([widget.textStyleState, _styleManager]),
       builder: (context, child) {
         // 체크박스·굵게 표시는 ChecklistTextEditingController가 담당
-        return TextField(
-          controller: widget.controller,
-          focusNode: widget.focusNode,
-          decoration: widget.decoration,
-          // 색상은 테마를 따름 (다크모드에서 검정 고정 시 글자가 보이지 않음)
-          style: const TextStyle(
-            fontSize: 16.0,
-            height: 1.2,
+        // 기기 '굵은 글꼴' 설정은 본문에 적용하지 않음: 굵게 지정한 글자만 굵게 보이고,
+        // 저장 후 읽기 화면(ChecklistText)과 같은 굵기로 표시되도록 함
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(boldText: false),
+          child: TextField(
+            controller: widget.controller,
+            focusNode: widget.focusNode,
+            decoration: widget.decoration,
+            // 색상은 테마를 따름 (다크모드에서 검정 고정 시 글자가 보이지 않음)
+            style: const TextStyle(
+              fontSize: 16.0,
+              height: 1.2,
+            ),
+            maxLines: widget.maxLines,
+            minLines: widget.minLines,
+            keyboardType: widget.keyboardType,
+            textInputAction: widget.textInputAction,
+            textCapitalization: widget.textCapitalization,
+            onTap: _handleTap,
+            cursorWidth: 1.5,
+            showCursor: true,
+            enableInteractiveSelection: true,
+            // 글자를 드래그해 선택하면 나오는 메뉴에 '굵게' 항목 추가
+            contextMenuBuilder: _buildContextMenu,
           ),
-          maxLines: widget.maxLines,
-          minLines: widget.minLines,
-          keyboardType: widget.keyboardType,
-          textInputAction: widget.textInputAction,
-          textCapitalization: widget.textCapitalization,
-          onTap: _handleTap,
-          cursorWidth: 1.5,
-          showCursor: true,
-          enableInteractiveSelection: true,
-          // 글자를 드래그해 선택하면 나오는 메뉴에 '굵게' 항목 추가
-          contextMenuBuilder: _buildContextMenu,
         );
       },
     );

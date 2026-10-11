@@ -118,6 +118,27 @@ void main() {
       await tester.pumpAndSettle();
       expect(controller.boldRanges, isEmpty);
     });
+
+    testWidgets('기기 "굵은 글꼴" 설정이 켜져 있어도 본문은 얇게, 굵게 지정한 글자만 굵게 표시된다', (tester) async {
+      final controller = ChecklistTextEditingController(text: '오늘은 중요한 날', boldRanges: [[4, 7]]);
+      final styleState = TextStyleState();
+      addTearDown(styleState.dispose);
+      await tester.pumpWidget(MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(boldText: true),
+          child: Scaffold(
+            body: AdvancedRichTextField(controller: controller, textStyleState: styleState, maxLines: null),
+          ),
+        ),
+      ));
+
+      final span = tester.state<EditableTextState>(find.byType(EditableText)).buildTextSpan();
+      // 일반 글자: 기기 설정의 bold가 적용되지 않음
+      expect(span.style?.fontWeight, isNot(FontWeight.bold));
+      expect(styleOfSpan(span, '오늘은 ')?.fontWeight, isNot(FontWeight.bold));
+      // 굵게 지정한 글자만 굵게
+      expect(styleOfSpan(span, '중요한')?.fontWeight, FontWeight.bold);
+    });
   });
 
   group('저장 및 표시', () {

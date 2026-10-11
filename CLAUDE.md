@@ -111,6 +111,7 @@ adb shell am start -W -a android.intent.action.VIEW -n com.diary.app/.MainActivi
   - Rules: `lib/core/utils/bold_utils.dart` (`BoldUtils.toggle` / `adjustForEdit` shifts ranges as text is typed or deleted / `trim` keeps ranges aligned when trimming on save)
   - Edit: `ChecklistTextEditingController.toggleBoldOnSelection()` — triggered from the text-selection menu ("굵게"/"굵게 해제", `AdvancedRichTextField._buildContextMenu`) or the toolbar **B** button
   - Display: pass `boldRanges` to `ChecklistText` (read screens, search, calendar cards)
+  - The device "bold text" accessibility setting (`MediaQuery.boldText`) is ignored for content: `AdvancedRichTextField` overrides it to `false`, and `ChecklistText` spans carry the theme's explicit weight, so only `boldRanges` text is bold in both edit and read views
 - Entry colors: `lib/core/theme/entry_colors.dart` (`EntryColors`) — diary blue, to-do orange, memo green, calculator purple; used for list card borders (`EntryColors.cardShape`) in all tabs, search results and calendar cards
 - `AppSettings`: App configuration and preferences
 - Uses `json_annotation` and `build_runner` for code generation
@@ -225,7 +226,8 @@ flutter clean && flutter build apk
 - `test/deeplink_router_test.dart`, `test/widget_deeplink_start_test.dart`: widget deep link routing and direct start on the target screen
 - `test/checklist_test.dart`: checkbox toggle/strikethrough rules, read-screen toggle saves, edit-field strikethrough
 - `test/calculator_tab_test.dart`: calculator add/edit/delete flow, budget/remaining, fixed summary with scrolling rows
-- `test/bold_test.dart`: bold toggle on selection, range shifting on edits, selection-menu "굵게", JSON round-trip, read-screen bold
+- `test/calendar_tab_test.dart`: vertical drags on the calendar keep the month view (vertical format swipe disabled, `AvailableGestures.horizontalSwipe`)
+- `test/bold_test.dart`: bold toggle on selection, range shifting on edits, selection-menu "굵게", device bold-text setting ignored in the editor, JSON round-trip, read-screen bold
 - Focus on testing Provider logic and model serialization
 - Use `flutter test` for unit tests
 - Manual testing recommended for widget functionality
