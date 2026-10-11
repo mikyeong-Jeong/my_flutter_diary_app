@@ -212,7 +212,7 @@ flutter clean && flutter build apk
 - `table_calendar ^3.0.9` - Calendar UI component
 - `home_widget ^0.7.0` - Android widget integration
 - `path_provider ^2.1.5` - File system access
-- `share_plus ^7.2.2` - File sharing functionality
+- `share_plus ^13.3.1` - File sharing functionality
 - `shared_preferences ^2.2.3` - Widget data sharing
 - `file_selector ^1.0.3` - File operations (web/desktop)
 - `permission_handler ^12.0.1` - Android permissions

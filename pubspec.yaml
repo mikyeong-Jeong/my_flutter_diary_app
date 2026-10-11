@@ -29,7 +29,7 @@ dependencies:
   
   # File operations
   file_selector: ^1.0.3
-  share_plus: ^7.2.2
+  share_plus: ^13.3.1
   permission_handler: ^12.0.1
   
   # Calendar integration - 필요 시 활성화 가능

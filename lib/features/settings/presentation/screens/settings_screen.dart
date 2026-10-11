@@ -686,11 +686,11 @@ class SettingsScreen extends StatelessWidget {
       await tempFile.writeAsBytes(bytes);
 
       // 파일 공유
-      await Share.shareXFiles(
-        [XFile(tempFile.path)],
+      await SharePlus.instance.share(ShareParams(
+        files: [XFile(tempFile.path)],
         subject: '다이어리 백업',
         text: '다이어리 백업 파일입니다. 안전한 곳에 보관해주세요.',
-      );
+      ));
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
