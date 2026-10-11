@@ -351,6 +351,8 @@ class _CalendarTabState extends State<CalendarTab> {
                         lastDay: _lastDay,
                         focusedDay: _focusedDay,
                         calendarFormat: _calendarFormat,
+                        // 세로 스와이프(월간→2주→주간 전환)는 바깥 스크롤과 충돌해 달력이 줄어든 채 돌아오지 않으므로 끔
+                        availableGestures: AvailableGestures.horizontalSwipe,
                         selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                         eventLoader: (day) {
                           // 일기(EntryType.dated)가 있을 때만 마커 표시
